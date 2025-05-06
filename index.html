@@ -1,0 +1,2938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TXT to EPUB Converter</title>
+    <style>
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jschardet/3.0.0/jschardet.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-dark: #3a56d4;
+            --primary-light: #ebefff;
+            --secondary-color: #48bfe3;
+            --secondary-dark: #3ca9cd;
+            --success-color: #34a853;
+            --warning-color: #f7b801;
+            --danger-color: #ef476f;
+            --dark-color: #212529;
+            --text-color: #343a40;
+            --light-text: #6c757d;
+            --light-gray: #f8f9fa;
+            --mid-gray: #e9ecef;
+            --dark-gray: #ced4da;
+            --white: #ffffff;
+            --sidebar-width: 300px;
+            --icons-width: 48px;
+            --header-height: 60px;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Convert button styles */
+        #removeTxtBtn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 1px solid transparent;
+            margin-right: 16px;
+        }
+
+        #removeTxtBtn:hover {
+            border: 1px solid;
+
+        }
+
+        .filbt {
+            margin: 24px 0 18px;
+            display: flex;
+        }
+
+        .convert-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 28px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--white);
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+            position: relative;
+            overflow: hidden;
+            min-width: 200px;
+            margin: 0 auto;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        
+        /* Responsive convert button */
+        @media (max-width: 768px) {
+            .filbt {
+                display: block;
+            }
+
+            .convert-btn {
+                width: 100%;
+                max-width: 300px;
+                padding: 12px 24px;
+                font-size: 15px;
+                border-radius: var(--border-radius);
+                margin-top: 10px;
+            }
+
+            .file-preview {
+                border-radius: var(--border-radius);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .filbt {
+                display: block;
+            }
+
+            .convert-btn {
+                max-width: 100%;
+                padding: 10px 20px;
+                font-size: 14px;
+                border-radius: var(--border-radius);
+                margin-top: 8px;
+            }
+
+            .file-preview {
+                border-radius: var(--border-radius);
+            }
+            
+        }
+        
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background-color: var(--white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0;
+            flex: 1;
+        }
+        
+        .header-actions button {
+            margin-left: 8px;
+        }
+        
+        /* Redesigned Sidebar Styles */
+        .sidebar {
+            position: relative;
+            display: flex;
+            height: calc(100vh - var(--header-height));
+            top: var(--header-height);
+            left: 0;
+            z-index: 90;
+            transition: var(--transition);
+        }
+
+        /* Icons Column */
+        .sidebar-icons {
+            width: var(--icons-width);
+            height: 100%;
+            background-color: var(--white);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            z-index: 91;
+        }
+
+        .sidebar-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .sidebar-icon:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .sidebar-icon.active {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        /* Content Panel */
+        .sidebar-content {
+            width: 0;
+            height: 100%;
+            background-color: var(--white);
+            overflow: hidden;
+            transition: width 0.3s ease;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-content.expanded {
+            width: calc(var(--sidebar-width) - var(--icons-width));
+        }
+
+        /* Settings Sections */
+        .settings-section {
+            display: none;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        .settings-header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--mid-gray);
+            padding-bottom: 10px;
+        }
+
+        .settings-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .settings-header h3 i {
+            margin-right: 8px;
+        }
+
+        /* Main Content Adjustment */
+        .main-content {
+            flex: 1;
+            margin-top: var(--header-height);
+            padding: 24px;
+            transition: var(--transition);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            /* Mobile view - sidebar is hidden by default */
+            .sidebar {
+                position: fixed;
+                left: calc(-1 * var(--sidebar-width));
+                width: var(--sidebar-width);
+                flex-direction: column;
+            }
+            
+            .sidebar.sidebar-visible {
+                left: 0;
+            }
+            
+            .sidebar-icons {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+                padding: 8px;
+                gap: 8px;
+            }
+            
+            .sidebar-icon {
+                margin-bottom: 0;
+            }
+            
+            .sidebar-content {
+                width: 100%;
+                height: calc(100% - 52px);
+            }
+            
+            .sidebar-content.expanded {
+                width: 100%;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        
+        /* Form elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--dark-gray);
+            border-radius: 4px;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        
+        .radio-option {
+            margin-right: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .radio-option input[type="radio"] {
+            margin-right: 4px;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--secondary-dark);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .btn-disabled {
+            background-color: var(--dark-gray);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .btn-disabled:hover {
+            background-color: var(--dark-gray);
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Drop area */
+         /* 改进后的上传区域容器 */
+        .content-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 10px;
+        }
+
+        .file-format-badge {
+            display: inline-block;
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 2px 10px;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            margin: 0 4px;
+        }
+
+        .drop-area {
+            border: 2px dashed var(--dark-gray);
+            border-radius: var(--border-radius);
+            padding: 48px 24px;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .drop-area:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(67, 97, 238, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .drop-area.active {
+            border-color: var(--primary-color);
+            background-color: var(--primary-light);
+        }
+        
+        .drop-area h3 {
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+        
+        .drop-area p {
+            color: var(--light-text);
+            margin-bottom: 16px;
+        }
+        
+        .drop-area input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        
+        /* File preview */
+        .file-preview {
+            display: none;
+            align-items: center;
+            padding: 10px;
+            background-color: var(--light-gray);
+            flex: 1;
+            border-radius: 8px 0 0 8px;
+        }
+        
+        .file-preview i {
+            font-size: 24px;
+            margin-right: 16px;
+        }
+        
+        .file-details {
+            flex: 1;
+        }
+        
+        .file-details h4 {
+            font-weight: 500;
+            font-size: 15px;
+        }
+        
+        /* Cover preview */
+        .cover-preview-container {
+            text-align: center;
+            margin: 16px 0;
+        }
+        
+        .cover-preview {
+            max-width: 150px;
+            max-height: 225px;
+            border: 1px solid var(--mid-gray);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+            margin: 0 auto;
+        }
+        
+        .cover-status {
+            margin: 8px 0;
+            font-style: italic;
+            color: var(--light-text);
+            font-size: 13px;
+        }
+        
+        /* Progress area */
+        .progress-area {
+            display: none;
+            text-align: center;
+        }
+        
+        .progress-bar-container {
+            height: 8px;
+            background-color: var(--mid-gray);
+            border-radius: 4px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--primary-light);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Result area */
+        .result-area {
+            display: none;
+            text-align: center;
+        }
+        
+        .result-icon {
+            color: var(--success-color);
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .result-card {
+            background-color: var(--light-gray);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            margin-top: 16px;
+        }
+        
+        .result-actions {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .result-actions .btn {
+            min-width: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .result-actions .btn i {
+            margin-right: 8px;
+        }
+        
+        @media (max-width: 576px) {
+            .result-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .result-actions .btn {
+                width: 100%;
+                margin: 0;
+            }
+        }
+        
+        /* Debug area */
+        .debug-area {
+            margin-top: 16px;
+            padding: 12px;
+            background-color: var(--dark-color);
+            border-radius: var(--border-radius);
+            display: none;
+        }
+        
+        .debug-area h3 {
+            margin-bottom: 8px;
+            color: var(--white);
+            font-size: 14px;
+        }
+        
+        .debug-log {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .debug-log div {
+            margin-bottom: 4px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+        }
+        
+        /* Configuration summary */
+        .config-summary {
+            border-left: 3px solid var(--primary-color);
+            padding-left: 12px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+        
+        .summary-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .summary-text {
+            flex: 1;
+        }
+        
+        /* 骨架屏样式 */
+        .skeleton {
+            background-color: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);;
+            border-radius: 4px;
+            animation: pulse 1.2s infinite linear;
+        }
+        @keyframes pulse {
+            0% {
+                background-position: -200px 0;
+            }
+            100% {
+                background-position: 200px 0;
+            }
+        }
+
+        .summary-cover {
+            width: 120px;
+            border: 1px solid var(--mid-gray);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--light-gray);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .summary-cover img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+        
+        #summaryCoverPlaceholder {
+            color: var(--light-text);
+            font-size: 12px;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .config-summary h4 {
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+        }
+        
+        .config-summary p {
+            margin: 4px 0;
+            color: var(--text-color);
+        }
+
+        /* Other responsive adjustments */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 16px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            .drop-area {
+                padding: 32px 16px;
+            }
+            
+            .drop-area i {
+                font-size: 36px;
+            }
+            
+        }
+        
+        @media (max-width: 576px) {
+            :root {
+                --sidebar-width: 270px;
+            }
+            
+            .header h1 {
+                font-size: 1rem;
+            }
+            
+            .main-content {
+                padding: 16px;
+            }
+            
+            .btn-sm-block {
+                display: block;
+                width: 100%;
+                margin-bottom: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>小说 TXT to EPUB 转换</h1>
+            <div class="header-actions">
+                <button id="toggleSidebarBtn" class="btn btn-sm btn-outline">
+                    <i class="fas fa-sliders-h"></i> 设置
+                </button>
+            </div>
+        </div>
+
+        <!-- Redesigned Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <!-- Icons Column (Always Visible on Desktop) -->
+            <div class="sidebar-icons" id="sidebarIcons">
+                <div class="sidebar-icon" data-section="bookInfoSection">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="sidebar-icon" data-section="chapterSection">
+                    <i class="fas fa-list-ol"></i>
+                </div>
+                <div class="sidebar-icon" data-section="coverSection">
+                    <i class="fas fa-image"></i>
+                </div>
+                <div class="sidebar-icon" data-section="appearanceSection">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="sidebar-icon" data-section="debugSection">
+                    <i class="fas fa-bug"></i>
+                </div>
+            </div>
+            
+            <!-- Content Panel (Expands when icon is clicked) -->
+            <div class="sidebar-content" id="sidebarContent">
+                <!-- Book Information Section -->
+                <div class="settings-section" id="bookInfoSection">
+                    <div class="settings-header">
+                        <h3>书籍信息</h3>
+                    </div>
+                    <div class="settings-body">
+                        <div class="form-group">
+                            <label for="bookTitle">书名</label>
+                            <input type="text" id="bookTitle" class="form-control" placeholder="输入书名">
+                        </div>
+                        <div class="form-group">
+                            <label for="bookAuthor">作者</label>
+                            <input type="text" id="bookAuthor" class="form-control" placeholder="输入作者">
+                        </div>
+                        <div class="form-group">
+                            <label for="bookLanguage">语言</label>
+                            <select id="bookLanguage" class="form-control">
+                                <option value="zh-CN">中文（简体）</option>
+                                <option value="zh-TW">中文（繁体）</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chapter Detection Section -->
+                <div class="settings-section" id="chapterSection">
+                    <div class="settings-header">
+                        <h3>识别章节或卷/部</h3>
+                    </div>
+                    <div class="settings-body">
+                        <div class="form-group">
+                            <label for="chapterPattern">章节</label>
+                            <select id="chapterPattern" class="form-control">
+                                <option value="auto">自动识别章节</option>
+                                <option value="chinese">中文模式 (第X章)</option>
+                                <option value="english">英文模式 (Chapter X)</option>
+                                <option value="numbered">数字 (1., 2., etc)</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </div>
+                        <div id="customChapterArea" style="display: none;">
+                            <div class="form-group">
+                                <label for="customChapterPattern">正则表达式</label>
+                                <input type="text" id="customChapterPattern" class="form-control" placeholder="e.g. ^第[0-9一二三四五六七八九十零〇百千两 ]+[章]">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="volumePattern">卷/部</label>
+                            <select id="volumePattern" class="form-control">
+                                <option value="auto">自动识别卷名</option>
+                                <option value="chinese">中文模式 (第X卷/第X部)</option>
+                                <option value="english">英文模式 (Volume X/Book X)</option>
+                                <option value="disabled">不识别</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </div>
+                        <div id="customVolumeArea" style="display: none;">
+                            <div class="form-group">
+                                <label for="customVolumePattern">正则表达式</label>
+                                <input type="text" id="customVolumePattern" class="form-control" placeholder="e.g. ^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部]">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="maxTitleLength">标题最大长度（字符）</label>
+                            <input type="number" id="maxTitleLength" class="form-control" min="1" max="100" value="35">
+                        </div>
+                        <div class="form-group">
+                            <label for="unknownTitleName">未知章节命名</label>
+                            <input type="text" id="unknownTitleName" class="form-control" value="章节正文">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cover Options Section -->
+                <div class="settings-section" id="coverSection">
+                    <div class="settings-header">
+                        <h3>封面</h3>
+                    </div>
+                    <div class="settings-body">
+                        <div class="form-group">
+                            <label>封面源</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="coverSearch" name="coverOption" value="search" checked>
+                                    <label for="coverSearch">起点网</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="coverUpload" name="coverOption" value="upload">
+                                    <label for="coverUpload">本地上传</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="coverNone" name="coverOption" value="none">
+                                    <label for="coverNone">无封面</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="coverUploadArea" style="display: none;">
+                            <div class="form-group">
+                                <button class="btn btn-outline btn-sm btn-block" id="selectCoverBtn">
+                                    <i class="fas fa-upload"></i> 上传图片
+                                </button>
+                                <input type="file" id="coverInput" accept="image/*" hidden>
+                                <p id="coverFileName" style="margin-top: 8px; display: none; font-size: 13px;"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="cover-preview-container" id="coverPreviewArea">
+                            <img id="coverPreview" class="cover-preview">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance Options Section -->
+                <div class="settings-section" id="appearanceSection">
+                    <div class="settings-header">
+                        <h3>文本设置</h3>
+                    </div>
+                    <div class="settings-body">
+                        <div class="form-group">
+                            <label for="indent">段落首行缩进（字符）</label>
+                            <input type="number" id="indent" class="form-control" min="0" max="8" value="2">
+                        </div>
+                        <div class="form-group">
+                            <label for="titleAlign">标题对齐</label>
+                            <select id="titleAlign" class="form-control">
+                                <option value="center">居中</option>
+                                <option value="left">左对齐</option>
+                                <option value="right">右对齐</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fontFamily">字体</label>
+                            <select id="fontFamily" class="form-control">
+                                <option value="default">默认（系统字体）</option>
+                                <option value="serif">衬线字体</option>
+                                <option value="sans">无衬线字体</option>
+                                <option value="mono">等宽字体</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fontSize">基础字号</label>
+                            <select id="fontSize" class="form-control">
+                                <option value="100%">默认字号</option>
+                                <option value="90%">小字号</option>
+                                <option value="110%">大字号</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="lineHeight">行高</label>
+                            <select id="lineHeight" class="form-control">
+                                <option value="1.5">Default (1.5)</option>
+                                <option value="1.2">Compact (1.2)</option>
+                                <option value="1.8">Spacious (1.8)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="paragraphSpacing">段间距</label>
+                            <select id="paragraphSpacing" class="form-control">
+                                <option value="1em">Default (1em)</option>
+                                <option value="0.5em">Compact (0.5em)</option>
+                                <option value="1.5em">Spacious (1.5em)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Debug Options Section -->
+                <div class="settings-section" id="debugSection">
+                    <div class="settings-header">
+                        <h3>调试</h3>
+                    </div>
+                    <div class="settings-body">
+                        <div class="form-group">
+                            <label for="debugMode">Debug Mode</label>
+                            <select id="debugMode" class="form-control">
+                                <option value="off">Off</option>
+                                <option value="on">On</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent">
+            <!-- Upload Area -->
+            <div class="content-card upload-area" id="uploadCard">
+                <div class="drop-area" id="dropArea">
+                    <!-- 明确的文本指导 -->
+                    <h3>上传<span class="file-format-badge">TXT</span>文本文件</h3>
+                    <p>点击此区域选择文件，或将文件拖放到此处</p>
+                    <button class="btn" id="selectFileBtn">选择文件</button>
+                    <input type="file" id="fileInput" accept=".txt" hidden>
+                </div>
+
+                <div id="fileInfo" style="display: none; margin-top: 16px;">
+                    <div class="config-summary" id="configSummary">
+                        <div class="summary-container">
+                            <div class="summary-text">
+                                <h4>文本摘要</h4>
+                                <div id="configDetails">
+                                    <p><strong>标题:</strong> <span id="summaryTitle"></span></p>
+                                    <p><strong>作者:</strong> <span id="summaryAuthor"></span></p>
+                                    <p><strong>封面源:</strong> <span id="summaryCover"></span></p>
+                                    <p><strong>大小:</strong> <span id="txtFileSize"></span></p>
+                                    <p><strong>编码:</strong> <span id="txtEncoding"></span></p>
+                                </div>
+                            </div>
+                            <div class="summary-cover skeleton">
+                                <img id="summaryCoverPreview" src="" alt="Book Cover" style="display: none;">
+                                <div id="summaryCoverPlaceholder">No cover selected</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filbt">
+                        <div class="file-preview" id="txtPreview">
+                            <i class="fas fa-file-alt"></i>
+                            <div class="file-details">
+                                <h4 id="txtFileName">filename.txt</h4>
+                            </div>
+                            <span id="removeTxtBtn"><i class="fas fa-times" style="margin: 0; font-size: medium;"></i></span>
+                        </div>
+                        <button class="convert-btn" id="convertBtn">
+                            <span class="convert-btn-text">转换</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Area -->
+            <div class="content-card progress-area" id="progressCard" style="display: none;">
+                <div class="loading-spinner"></div>
+                <h3 id="progressTitle">此过程需要一些时间，请稍后...</h3>
+                <p id="progressStatus"></p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+
+            <!-- Result Area -->
+            <div class="content-card result-area" id="resultCard" style="display: none;">
+                <i class="fas fa-check-circle result-icon"></i>
+                <h3>转换完成!</h3>
+                <p>您的epub文件准备下载</p>
+                
+                <div class="result-card">
+                    <h4 id="resultFileName"></h4>
+                    <p id="resultFileSize"></p>
+                    
+                    <div class="result-actions">
+                        <button class="btn btn-primary" id="downloadBtn">
+                            <i class="fas fa-download"></i> 下载
+                        </button>
+                        <button class="btn btn-outline" id="convertNewBtn">
+                            <i class="fas fa-redo"></i> 转换更多文件
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Area -->
+            <div class="debug-area" id="debugArea">
+                <h3>Debug Log</h3>
+                <div class="debug-log" id="debugLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements - Main UI
+    const sidebar = document.getElementById('sidebar');
+    const sidebarContent = document.getElementById('sidebarContent');
+    const mainContent = document.getElementById('mainContent');
+    const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    
+    // DOM Elements - Settings Sections
+    const settingsSections = document.querySelectorAll('.settings-section');
+    const sidebarIcons = document.querySelectorAll('.sidebar-icon');
+    
+    // DOM Elements - File Upload
+    const dropArea = document.getElementById('dropArea');
+    const fileInput = document.getElementById('fileInput');
+    const selectFileBtn = document.getElementById('selectFileBtn');
+    const fileInfo = document.getElementById('fileInfo');
+    const txtPreview = document.getElementById('txtPreview');
+    const txtFileName = document.getElementById('txtFileName');
+    const txtFileSize = document.getElementById('txtFileSize');
+    const txtEncoding = document.getElementById('txtEncoding');
+    const removeTxtBtn = document.getElementById('removeTxtBtn');
+    
+    // DOM Elements - Book Information
+    const bookTitle = document.getElementById('bookTitle');
+    const bookAuthor = document.getElementById('bookAuthor');
+    const bookLanguage = document.getElementById('bookLanguage');
+    
+    // DOM Elements - Chapter Detection
+    const chapterPattern = document.getElementById('chapterPattern');
+    const volumePattern = document.getElementById('volumePattern');
+    const customChapterArea = document.getElementById('customChapterArea');
+    const customVolumeArea = document.getElementById('customVolumeArea');
+    const customChapterPattern = document.getElementById('customChapterPattern');
+    const customVolumePattern = document.getElementById('customVolumePattern');
+    const maxTitleLength = document.getElementById('maxTitleLength');
+    const unknownTitleName = document.getElementById('unknownTitleName');
+    
+    // DOM Elements - Cover Options
+    const coverUpload = document.getElementById('coverUpload');
+    const coverSearch = document.getElementById('coverSearch');
+    const coverNone = document.getElementById('coverNone');
+    const coverUploadArea = document.getElementById('coverUploadArea');
+    const coverSearchArea = document.getElementById('coverSearchArea');
+    const coverPreviewArea = document.getElementById('coverPreviewArea');
+    const coverPreview = document.getElementById('coverPreview');
+    const selectCoverBtn = document.getElementById('selectCoverBtn');
+    const coverInput = document.getElementById('coverInput');
+    const coverFileName = document.getElementById('coverFileName');
+    const coverQuery = document.getElementById('coverQuery');
+    
+    // DOM Elements - Summary Section
+    const summaryTitle = document.getElementById('summaryTitle');
+    const summaryAuthor = document.getElementById('summaryAuthor');
+    const summaryCover = document.getElementById('summaryCover');
+    
+    // DOM Elements - Appearance Options
+    const indent = document.getElementById('indent');
+    const titleAlign = document.getElementById('titleAlign');
+    const fontFamily = document.getElementById('fontFamily');
+    const fontSize = document.getElementById('fontSize');
+    const lineHeight = document.getElementById('lineHeight');
+    const paragraphSpacing = document.getElementById('paragraphSpacing');
+    
+    // DOM Elements - Debug
+    const debugArea = document.getElementById('debugArea');
+    const debugLog = document.getElementById('debugLog');
+    const debugMode = document.getElementById('debugMode');
+    
+    // DOM Elements - Cards and Actions
+    const uploadCard = document.getElementById('uploadCard');
+    const progressCard = document.getElementById('progressCard');
+    const resultCard = document.getElementById('resultCard');
+    // FIXED: Removed duplicate convertBtn declaration
+    
+    // Button and Progress Elements
+    const convertBtn = document.getElementById('convertBtn');
+    const progressArea = document.getElementById('progressCard');
+    const progressTitle = document.getElementById('progressTitle');
+    const progressStatus = document.getElementById('progressStatus');
+    const progressBar = document.getElementById('progressBar');
+    const resultArea = document.getElementById('resultCard');
+    const resultFileName = document.getElementById('resultFileName');
+    const resultFileSize = document.getElementById('resultFileSize');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const convertNewBtn = document.getElementById('convertNewBtn');
+    const converterCard = document.getElementById('converterCard');
+    
+    // State Variables
+    let selectedFile = null;
+    let coverFile = null;
+    let coverDataUrl = null;
+    let epubBlob = null;
+    let detectedEncoding = null;
+    let fileArrayBuffer = null;
+    let processedText = null;
+    
+    // Initialize with default state
+    initializeApp();
+    
+    function initializeApp() {
+        // Setup event listeners
+        setupUIEventListeners();
+        setupFileEventListeners();
+        setupSettingsEventListeners();
+        setupConversionEventListeners();
+        
+        // Initialize UI state
+        updateDebugArea();
+    }
+    
+    // UI Event Listeners - New Redesigned Sidebar Logic
+    function setupUIEventListeners() {
+        // Setup sidebar icon click handlers
+        sidebarIcons.forEach(icon => {
+            icon.addEventListener('click', function() {
+                const sectionId = this.getAttribute('data-section');
+                const isCurrentlyActive = this.classList.contains('active');
+                
+                if (isCurrentlyActive && window.innerWidth > 992) {
+                    // If clicking on already active icon, collapse sidebar content
+                    sidebarContent.classList.remove('expanded');
+                    this.classList.remove('active');
+                    
+                    // Deactivate all sections
+                    settingsSections.forEach(section => section.classList.remove('active'));
+                } else {
+                    // Normal behavior - activate the section
+                    activateSection(sectionId, this);
+                }
+            });
+        });
+
+        // Setup sidebar toggle for mobile
+        toggleSidebarBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('sidebar-visible');
+        });
+        
+        // Close sidebar when clicking outside of it (mobile only)
+        document.addEventListener('click', function(event) {
+            // Only apply this in mobile view
+            if (window.innerWidth <= 992) {
+                // Check if the sidebar is visible and the click is outside the sidebar
+                if (sidebar.classList.contains('sidebar-visible') && 
+                    !sidebar.contains(event.target) && 
+                    event.target !== toggleSidebarBtn) {
+                    sidebar.classList.remove('sidebar-visible');
+                }
+            }
+        });
+
+        // Handle responsive behavior
+        window.addEventListener('resize', handleResize);
+        
+        // Initial resize check
+        handleResize();
+    }
+    
+    // Activate a specific settings section
+    function activateSection(sectionId, iconElement) {
+        // Verify sectionId exists before activating
+        const sectionElement = document.getElementById(sectionId);
+        if (!sectionElement) {
+            log(`Section with ID ${sectionId} not found`, 'error');
+            return;
+        }
+        
+        // Deactivate all sections and icons
+        settingsSections.forEach(section => section.classList.remove('active'));
+        sidebarIcons.forEach(icon => icon.classList.remove('active'));
+        
+        // Activate the selected section and icon
+        sectionElement.classList.add('active');
+        iconElement.classList.add('active');
+        
+        // Expand the sidebar content
+        sidebarContent.classList.add('expanded');
+    }
+
+    // Handle responsive behavior
+    function handleResize() {
+        if (window.innerWidth <= 992) {
+            // Mobile: Hide sidebar by default
+            sidebar.classList.remove('sidebar-visible');
+            
+            // Ensure sidebar content is fully visible when shown
+            sidebarContent.classList.add('expanded');
+
+            // Find the first sidebar icon and use it to activate the default section
+            const firstIcon = sidebarIcons[0];
+            if (firstIcon) {
+                const defaultSectionId = firstIcon.getAttribute('data-section');
+                if (defaultSectionId) {
+                    activateSection(defaultSectionId, firstIcon);
+                }
+            }
+        } else {
+            // Desktop: Reset mobile-specific classes
+            sidebar.classList.remove('sidebar-visible');
+            
+            // Check if any section is active
+            const hasActiveSection = Array.from(sidebarIcons).some(icon => 
+                icon.classList.contains('active')
+            );
+            
+            // If a section is active, ensure content is expanded
+            if (hasActiveSection) {
+                sidebarContent.classList.add('expanded');
+            } else {
+                sidebarContent.classList.remove('expanded');
+            }
+        }
+    }
+    
+    // File Event Listeners - Simplified
+    function setupFileEventListeners() {
+        if (!dropArea || !fileInput || !selectFileBtn || !removeTxtBtn) {
+            log('Required file upload elements not found', 'error');
+            return;
+        }
+        
+        dropArea.addEventListener('click', function(e) {
+            if (e.target !== selectFileBtn && !selectFileBtn.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+        
+        selectFileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        removeTxtBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeFile();
+        });
+        
+        // Drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        dropArea.addEventListener('drop', handleDrop, false);
+    }
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    function highlight() {
+        if (dropArea) {
+            dropArea.classList.add('active');
+        }
+    }
+    
+    function unhighlight() {
+        if (dropArea) {
+            dropArea.classList.remove('active');
+        }
+    }
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) {
+            // Look for TXT file first
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].name.toLowerCase().endsWith('.txt')) {
+                    // FIXED: Used a more reliable approach to handle file input
+                    fileInput.files = files;
+                    handleFileSelect();
+                    break;
+                }
+            }
+            
+            // Look for image files if cover upload is enabled
+            if (coverUpload && coverUpload.checked) {
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].type.startsWith('image/')) {
+                        coverInput.files = files;
+                        handleCoverSelect();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    function handleFileSelect() {
+        if (fileInput.files.length > 0) {
+            selectedFile = fileInput.files[0];
+            
+            // Check if it's a text file
+            if (!selectedFile.name.toLowerCase().endsWith('.txt')) {
+                log('Error: Not a .txt file', 'error');
+                alert('Please select a valid .txt file');
+                removeFile();
+                return;
+            }
+            
+            // Display file info
+            txtFileName.textContent = selectedFile.name;
+            txtFileSize.textContent = formatFileSize(selectedFile.size);
+            txtPreview.style.display = 'flex';
+            fileInfo.style.display = 'block';
+            dropArea.style.display = 'none';
+            
+            // Detect encoding and update UI
+            detectEncoding(selectedFile).then(encodingInfo => {
+                detectedEncoding = encodingInfo.encoding;
+                txtEncoding.textContent = `${encodingInfo.encoding} (Confidence: ${Math.round(encodingInfo.confidence * 100)}%)`;
+                log(`Detected encoding: ${encodingInfo.encoding} with confidence ${Math.round(encodingInfo.confidence * 100)}%`);
+                
+                // Extract title and author from filename
+                extractTitleAuthor(selectedFile.name);
+                updateSummary();
+
+                // automatically search for cover if enabled
+                if (coverSearch && coverSearch.checked) {
+                    searchQidianCover();
+                }
+            }).catch(error => {
+                log(`Error detecting encoding: ${error.message}`, 'error');
+                txtEncoding.textContent = 'Encoding: Unknown (error)';
+                
+                
+                // Extract title and author anyway
+                extractTitleAuthor(selectedFile.name);
+                
+                // automatically search for cover if enabled
+                if (coverSearch && coverSearch.checked) {
+                    searchQidianCover();
+                }
+            });
+        }
+    }
+    
+    // FIXED: Improved handleCoverSelect to actually handle the file instead of simulating
+    function handleCoverSelect() {
+        if (coverInput.files.length > 0) {
+            coverFile = coverInput.files[0];
+            
+            // Check if it's an image
+            if (!coverFile.type.startsWith('image/')) {
+                log('Error: Not an image file', 'error');
+                alert('Please select a valid image file for the cover');
+                coverFile = null;
+                coverInput.value = '';
+                return;
+            }
+            
+            coverFileName.textContent = `Selected: ${coverFile.name}`;
+            coverFileName.style.display = 'block';
+            
+            // Preview the cover
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                coverDataUrl = e.target.result;
+                coverPreview.src = coverDataUrl;
+                coverPreview.style.display = 'block';
+                
+                // Update summary cover preview if elements exist
+                const summaryCoverPreview = document.getElementById('summaryCoverPreview');
+                const summaryCoverPlaceholder = document.getElementById('summaryCoverPlaceholder');
+                
+                if (summaryCoverPreview) {
+                    summaryCoverPreview.src = coverDataUrl;
+                    summaryCoverPreview.style.display = 'block';
+                }
+                
+                if (summaryCoverPlaceholder) {
+                    summaryCoverPlaceholder.style.display = 'none';
+                }
+                
+                log('Cover image loaded successfully');
+            };
+            
+            reader.onerror = function(error) {
+                log(`Error reading cover file: ${error}`, 'error');
+            };
+            
+            reader.readAsDataURL(coverFile);
+        }
+    }
+    
+    function removeFile() {
+        selectedFile = null;
+        fileArrayBuffer = null;
+        processedText = null;
+        fileInput.value = '';
+        txtPreview.style.display = 'none';
+        fileInfo.style.display = 'none';
+        dropArea.style.display = 'block';
+        txtFileName.textContent = '';
+        txtFileSize.textContent = '';
+        txtEncoding.textContent = '';
+        coverFile = null;
+        coverDataUrl = null;
+
+        log('File removed');
+    }
+    
+    // Settings Event Listeners - Simplified
+    function setupSettingsEventListeners() {
+        // Cover options
+        if (coverUpload) {
+            coverUpload.addEventListener('change', toggleCoverOptions);
+        }
+        if (coverSearch) {
+            coverSearch.addEventListener('change', toggleCoverOptions);
+        }
+        if (coverNone) {
+            coverNone.addEventListener('change', toggleCoverOptions);
+        }
+        if (selectCoverBtn && coverInput) {
+            selectCoverBtn.addEventListener('click', () => coverInput.click());
+        }
+        
+        // Chapter pattern
+        if (chapterPattern && customChapterArea) {
+            chapterPattern.addEventListener('change', function() {
+                customChapterArea.style.display = chapterPattern.value === 'custom' ? 'block' : 'none';
+                updateSummary();
+            });
+        }
+        
+        if (volumePattern && customVolumeArea) {
+            volumePattern.addEventListener('change', function() {
+                customVolumeArea.style.display = volumePattern.value === 'custom' ? 'block' : 'none';
+                updateSummary();
+            });
+        }
+        
+        // Book information
+        if (bookTitle) {
+            bookTitle.addEventListener('input', updateSummary);
+        }
+        if (bookAuthor) {
+            bookAuthor.addEventListener('input', updateSummary);
+        }
+        
+        // Debug mode
+        if (debugMode) {
+            debugMode.addEventListener('change', updateDebugArea);
+        }
+    }
+    
+    function toggleCoverOptions() {
+        const summaryCoverPreview = document.getElementById('summaryCoverPreview');
+        const summaryCoverPlaceholder = document.getElementById('summaryCoverPlaceholder');
+        
+        if (coverUpload && coverUpload.checked) {
+            if (coverUploadArea) coverUploadArea.style.display = 'block';
+            if (coverSearchArea) coverSearchArea.style.display = 'none';
+            if (coverPreviewArea) coverPreviewArea.style.display = 'block';
+            if (summaryCover) summaryCover.textContent = 'Upload';
+        } else if (coverSearch && coverSearch.checked) {
+            if (coverUploadArea) coverUploadArea.style.display = 'none';
+            if (coverSearchArea) coverSearchArea.style.display = 'block';
+            if (coverPreviewArea) coverPreviewArea.style.display = 'block';
+            if (summaryCover) summaryCover.textContent = 'Search Online';
+        } else if (coverNone && coverNone.checked) {
+            if (coverUploadArea) coverUploadArea.style.display = 'none';
+            if (coverSearchArea) coverSearchArea.style.display = 'none';
+            if (coverPreviewArea) coverPreviewArea.style.display = 'none';
+            if (summaryCover) summaryCover.textContent = 'No Cover';
+        }
+        
+        updateSummary();
+    }
+    
+    // FIXED: Improved searchQidianCover function with better error handling for CORS issues
+    async function searchQidianCover() {
+        const bookname = bookTitle.value;
+        if (!bookname) {
+            log('Cannot search for cover: No book title provided', 'warning');
+            return;
+        }
+        
+        log(`Searching for Qidian cover with query: ${bookname}`);
+        
+        try {
+            // Due to CORS restrictions, we need to use a proxy or implement server-side handling
+            // For this demo, we'll use a CORS proxy
+            const corsProxy = 'https://corsproxy.io/?';
+            const targetUrl = encodeURIComponent(`https://m.qidian.com/soushu/${encodeURIComponent(bookname)}.html`);
+            const proxyUrl = corsProxy + targetUrl;
+            
+            log(`Connecting to Qidian search URL: ${targetUrl}`);
+            
+            // Fetch the search page with timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
+            const response = await fetch(proxyUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch search results: ${response.status}`);
+            }
+            
+            // Get the HTML content
+            const htmlContent = await response.text();
+            log('Received Qidian search page, looking for cover image');
+            
+            // Use regex to extract the first data-src attribute value (similar to the Python code)
+            const match = htmlContent.match(/data-src="([^"]+)"/);
+            if (!match) {
+                throw new Error('No cover image found in search results');
+            }
+            
+            // Extract the URL and modify it for the 600px version
+            let imageUrl = match[1];
+            log(`Found image URL: ${imageUrl}`);
+            
+            // Remove the last 3 characters and add '600' to get the large version
+            imageUrl = 'https:' + imageUrl.slice(0, -3) + '600';
+            log(`Modified to large version: ${imageUrl}`);
+            
+            // Check if the image exists before updating the UI
+            try {
+                await checkImageExists(imageUrl);
+                
+                // Update the cover preview
+                if (coverPreview) {
+                    coverPreview.src = imageUrl;
+                    coverPreview.style.display = 'block';
+                }
+                
+                coverDataUrl = imageUrl;
+                
+                // Update summary cover preview if elements exist
+                const summaryCoverPreview = document.getElementById('summaryCoverPreview');
+                const summaryCoverPlaceholder = document.getElementById('summaryCoverPlaceholder');
+                
+                if (summaryCoverPreview) {
+                    summaryCoverPreview.src = imageUrl;
+                    summaryCoverPreview.style.display = 'block';
+                }
+                
+                if (summaryCoverPlaceholder) {
+                    summaryCoverPlaceholder.style.display = 'none';
+                }
+            } catch (imageError) {
+                throw new Error(`Found image URL but couldn't load it: ${imageError.message}`);
+            }
+        } catch (error) {
+            log(`Qidian cover search error: ${error.message}`, 'error');
+        }
+    }
+    
+    // FIXED: New helper function to check if an image exists
+    function checkImageExists(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error('Image not found or failed to load'));
+            img.src = url;
+        });
+    }
+
+    
+    // FIXED: New function to validate cover image (check if it's not a placeholder)
+    function validateCoverImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = function() {
+                // If the image width is 1, it's a placeholder
+                resolve(img.width > 1);
+            };
+            img.onerror = function() {
+                reject(new Error('Image failed to load'));
+            };
+            img.src = url;
+        });
+    }
+    
+    // Update summary details
+    function updateSummary() {
+        if (summaryTitle) summaryTitle.textContent = bookTitle && bookTitle.value ? bookTitle.value : '未设置';
+        if (summaryAuthor) summaryAuthor.textContent = bookAuthor && bookAuthor.value ? bookAuthor.value : '未设置';
+        if (summaryCover) summaryCover.textContent = coverUpload && coverUpload.checked ? '本地上传' : coverSearch && coverSearch.checked ? '起点网' : '无封面';
+    }
+    
+    // Simplified conversion functions
+    function setupConversionEventListeners() {
+        if (convertBtn) {
+            convertBtn.addEventListener('click', startConversion);
+        }
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', downloadEpub);
+        }
+        if (convertNewBtn) {
+            convertNewBtn.addEventListener('click', resetConverter);
+        }
+    }
+    
+    function toggleCustomPattern() {
+        if (chapterPattern && customChapterArea) {
+            customChapterArea.style.display = chapterPattern.value === 'custom' ? 'block' : 'none';
+        }
+    }
+    
+    function toggleCustomVolumePattern() {
+        if (volumePattern && customVolumeArea) {
+            customVolumeArea.style.display = volumePattern.value === 'custom' ? 'block' : 'none';
+        }
+    }
+    
+    function updateDebugArea() {
+        if (debugMode && debugArea) {
+            debugArea.style.display = debugMode.value === 'on' ? 'block' : 'none';
+        }
+    }
+    
+    function log(message, level = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        
+        // Log to console
+        console[level === 'info' ? 'log' : level](message);
+        
+        // Add to debug log if it exists
+        if (debugLog) {
+            const logEntry = document.createElement('div');
+            logEntry.style.color = level === 'error' ? '#ff6b6b' : level === 'warning' ? '#feca57' : '#a3cb38';
+            logEntry.textContent = `[${timestamp}] ${level.toUpperCase()}: ${message}`;
+            debugLog.appendChild(logEntry);
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function extractTitleAuthor(filename) {
+        log(`Extracting title/author from filename: ${filename}`);
+        
+        // Remove the .txt extension
+        let name = filename.replace(/\.txt$/i, '');
+        
+        // Chinese title/author pattern: 《Title》作者：Author
+        const chineseTitleAuthorPattern = /《([^》]+)》[^作者]*作者[：:]\s*([^.]+)(?:\.txt)?$/;
+        const chineseMatch = name.match(chineseTitleAuthorPattern);
+        
+        if (chineseMatch) {
+            if (bookTitle) bookTitle.value = chineseMatch[1].trim();
+            if (chineseMatch[2] && bookAuthor) {
+                bookAuthor.value = chineseMatch[2].trim();
+            }
+            log(`Extracted title: "${bookTitle.value}" and author: "${bookAuthor ? bookAuthor.value : 'undefined'}"`);
+            return;
+        }
+        
+        // English pattern: Title - Author or Title by Author
+        const englishTitleAuthorPattern = /(.+?)(?:\s+-\s+|\s+by\s+)(.+)/i;
+        const englishMatch = name.match(englishTitleAuthorPattern);
+        
+        if (englishMatch) {
+            if (bookTitle) bookTitle.value = englishMatch[1].trim();
+            if (bookAuthor) bookAuthor.value = englishMatch[2].trim();
+            log(`Extracted title: "${bookTitle ? bookTitle.value : 'undefined'}" and author: "${bookAuthor ? bookAuthor.value : 'undefined'}"`);
+            return;
+        }
+        
+        // If no pattern matched, just use the filename as the title
+        if (bookTitle) bookTitle.value = name.trim();
+        log(`Using filename as title: "${bookTitle ? bookTitle.value : 'undefined'}"`);
+    }
+    
+    // Encoding Detection Functions
+    async function detectEncoding(file) {
+        log('Starting encoding detection...');
+        try {
+            // Read the file as ArrayBuffer
+            const arrayBuffer = await readFileAsArrayBuffer(file);
+            fileArrayBuffer = arrayBuffer; // Store for later use
+            
+            // Check if jschardet is available
+            if (typeof jschardet === 'undefined') {
+                log('jschardet library not found, using UTF-8 as default encoding', 'warning');
+                return { encoding: 'UTF-8', confidence: 0.9 };
+            }
+            
+            // Take a sample of the file for detection
+            const sampleSize = Math.min(4096, arrayBuffer.byteLength);
+            const sampleData = new Uint8Array(arrayBuffer, 0, sampleSize);
+            
+            // Use jschardet for detection
+            const result = jschardet.detect(sampleData);
+            
+            // Handle common encoding detection issues
+            let encoding = result.encoding || 'UTF-8';
+            
+            // Special case for Chinese texts often misdetected
+            if (encoding === 'ascii' || encoding === 'windows-1252') {
+                // Check if it might be GB18030 (Chinese) by looking for typical byte patterns
+                const possibleChinese = detectChineseEncoding(sampleData);
+                if (possibleChinese) {
+                    encoding = 'GB18030';
+                    result.confidence = 0.85; // Adjust confidence
+                }
+            }
+            
+            // Map encoding names to standard values
+            const mappedEncoding = mapEncodingName(encoding);
+            
+            log(`Encoding detection complete: ${mappedEncoding} (original: ${encoding})`);
+            
+            return {
+                encoding: mappedEncoding,
+                confidence: result.confidence || 0.5
+            };
+        } catch (error) {
+            log(`Encoding detection failed: ${error.message}`, 'error');
+            throw error;
+        }
+    }
+    
+    function detectChineseEncoding(data) {
+        // Check for GB18030/GBK/GB2312 patterns
+        // These encodings often have bytes in specific ranges for Chinese characters
+        let gbkPatternCount = 0;
+        
+        for (let i = 0; i < data.length - 1; i++) {
+            // Check for typical GBK byte patterns
+            // First byte in range 0x81-0xFE, second byte in range 0x40-0xFE
+            if (data[i] >= 0x81 && data[i] <= 0xFE) {
+                if (data[i+1] >= 0x40 && data[i+1] <= 0xFE) {
+                    gbkPatternCount++;
+                }
+            }
+        }
+        
+        // If we have enough patterns matching GBK/GB18030, return true
+        return gbkPatternCount > 20;
+    }
+    
+    function mapEncodingName(encoding) {
+        if (!encoding) return 'UTF-8';
+        
+        // Map jschardet encoding names to standard encoding names
+        const encodingMap = {
+            'gb2312': 'GB18030',
+            'gbk': 'GB18030',
+            'gb18030': 'GB18030',
+            'windows-1252': 'windows-1252',
+            'ascii': 'UTF-8',
+            'utf-8': 'UTF-8',
+            'utf8': 'UTF-8',
+            'big5': 'Big5',
+            'euc-kr': 'EUC-KR',
+            'euc-jp': 'EUC-JP',
+            'shift_jis': 'Shift_JIS',
+            'iso-8859-1': 'windows-1252',
+            'iso-8859-2': 'ISO-8859-2',
+            'iso-8859-5': 'ISO-8859-5'
+        };
+        
+        return encodingMap[encoding.toLowerCase()] || encoding;
+    }
+    
+    async function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    
+    async function decodeText(arrayBuffer, encodingName) {
+        log(`Decoding text with encoding: ${encodingName}`);
+        
+        try {
+            // For UTF-8, use the built-in decoder
+            if (encodingName.toLowerCase() === 'utf-8' || encodingName.toLowerCase() === 'utf8') {
+                const decoder = new TextDecoder('utf-8');
+                return decoder.decode(arrayBuffer);
+            }
+            
+            // For other encodings, try using TextDecoder with the specified encoding
+            try {
+                const decoder = new TextDecoder(encodingName);
+                return decoder.decode(arrayBuffer);
+            } catch (error) {
+                log(`TextDecoder failed for ${encodingName}: ${error.message}`, 'warning');
+                
+                // Fallback for Chinese encodings (client-side conversion is limited)
+                if (encodingName.toLowerCase() === 'gb18030' || 
+                    encodingName.toLowerCase() === 'gbk' || 
+                    encodingName.toLowerCase() === 'gb2312') {
+                    log('Trying special handling for Chinese encoding', 'warning');
+                    
+                    // Check if a Chinese encoding conversion library is available
+                    if (typeof Encoding !== 'undefined' && Encoding.convert) {
+                        log('Using Encoding.js for Chinese conversion');
+                        try {
+                            const bytes = new Uint8Array(arrayBuffer);
+                            const utf8Bytes = Encoding.convert(bytes, {
+                                to: 'UTF8',
+                                from: encodingName.toUpperCase()
+                            });
+                            return new TextDecoder('utf-8').decode(utf8Bytes);
+                        } catch (encError) {
+                            log(`Encoding.js conversion failed: ${encError.message}`, 'error');
+                        }
+                    }
+                    
+                    // Use a less precise but working approach
+                    // Convert to escaped unicode and then unescape
+                    const bytes = new Uint8Array(arrayBuffer);
+                    let result = '';
+                    for (let i = 0; i < bytes.length; i++) {
+                        result += String.fromCharCode(bytes[i]);
+                    }
+                    
+                    // This is a hack but may work for some simple cases
+                    log('Using fallback character conversion (limited support)', 'warning');
+                    return result;
+                }
+                
+                // Fallback to UTF-8
+                log('Falling back to UTF-8', 'warning');
+                const fallbackDecoder = new TextDecoder('utf-8');
+                return fallbackDecoder.decode(arrayBuffer);
+            }
+        } catch (error) {
+            log(`Text decoding failed: ${error.message}`, 'error');
+            throw error;
+        }
+    }
+    
+    // Conversion Process Functions
+    async function startConversion() {
+        if (!selectedFile) {
+            alert('Please select a TXT file');
+            return;
+        }
+        
+        const title = bookTitle.value || 'Untitled Book';
+        const author = bookAuthor.value || 'Unknown Author';
+        const language = bookLanguage ? bookLanguage.value : 'en';
+        
+        // Get conversion options
+        const options = {
+            title: title,
+            author: author,
+            language: language,
+            chapterPattern: getChapterPatternRegex(),
+            volumePattern: getVolumePatternRegex(),
+            maxTitleLength: maxTitleLength ? parseInt(maxTitleLength.value) : 100,
+            unknownTitleName: unknownTitleName ? unknownTitleName.value : 'Chapter',
+            indent: indent ? parseInt(indent.value) : 1,
+            titleAlign: titleAlign ? titleAlign.value : 'center',
+            fontFamily: fontFamily ? fontFamily.value : 'serif',
+            fontSize: fontSize ? fontSize.value : '1em',
+            lineHeight: lineHeight ? lineHeight.value : '1.5',
+            paragraphSpacing: paragraphSpacing ? paragraphSpacing.value : '0.8em'
+        };
+        
+        log(`Starting conversion with options: ${JSON.stringify(options)}`);
+        
+        // Show progress state
+        if (dropArea) dropArea.style.display = 'none';
+        if (fileInfo) fileInfo.style.display = 'none';
+        const optionsElement = document.querySelector('.options');
+        if (optionsElement) optionsElement.style.display = 'none';
+        if (convertBtn) convertBtn.style.display = 'none';
+        if (debugArea) debugArea.style.display = 'none';
+        if (progressArea) progressArea.style.display = 'block';
+        
+        // Start progress animation
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 5;
+            if (progress > 100) progress = 100;
+            if (progressBar) progressBar.style.width = `${progress}%`;
+            
+            // Update status messages
+            if (progressStatus) {
+                if (progress < 20) {
+                    progressStatus.textContent = '阅读和解码文本文件...';
+                } else if (progress < 40) {
+                    progressStatus.textContent = '检测章节和卷...';
+                } else if (progress < 60) {
+                    progressStatus.textContent = '格式化内容...';
+                } else if (progress < 80) {
+                    progressStatus.textContent = '创建EPUB结构...';
+                } else {
+                    progressStatus.textContent = '完成您的e-book...';
+                }
+            }
+            
+            if (progress === 100) {
+                clearInterval(progressInterval);
+            }
+        }, 200);
+        
+        try {
+            // Read and decode the text file
+            let text;
+            if (fileArrayBuffer) {
+                text = await decodeText(fileArrayBuffer, detectedEncoding);
+            } else {
+                // If we don't have the ArrayBuffer yet (unlikely), read it again
+                const buffer = await readFileAsArrayBuffer(selectedFile);
+                text = await decodeText(buffer, detectedEncoding);
+            }
+            
+            // Clean the text
+            text = cleanText(text);
+            log(`Text cleaned. Length: ${text.length} characters`);
+            
+            // Process text (detect chapters and format content)
+            processedText = processText(text, options);
+            log(`Text processed. Found ${processedText.length} sections`);
+            
+            // Get cover image data
+            let coverImageData = null;
+            
+            if (coverUpload && coverUpload.checked && coverFile) {
+                // Use uploaded cover
+                coverImageData = await readFileAsDataURL(coverFile);
+            } else if (coverSearch && coverSearch.checked && coverDataUrl) {
+                // Use searched cover
+                if (coverDataUrl.startsWith('http')) {
+                    // Fetch the image from URL and convert to data URL
+                    coverImageData = await fetchImageAsDataURL(coverDataUrl);
+                } else {
+                    // Already a data URL
+                    coverImageData = coverDataUrl;
+                }
+            }
+            
+            // Check if JSZip is available
+            if (typeof JSZip === 'undefined') {
+                throw new Error('JSZip library not found. Please include it in your HTML.');
+            }
+            
+            // Create EPUB
+            epubBlob = await generateEpub(processedText, coverImageData, options);
+            log(`EPUB created successfully. Size: ${formatFileSize(epubBlob.size)}`);
+            
+            // Finalize conversion
+            setTimeout(() => {
+                clearInterval(progressInterval);
+                if (progressBar) progressBar.style.width = '100%';
+                if (progressStatus) progressStatus.textContent = 'Conversion complete!';
+                
+                setTimeout(() => {
+                    if (progressArea) progressArea.style.display = 'none';
+                    if (resultArea) resultArea.style.display = 'block';
+                    if (resultFileName) resultFileName.textContent = `${sanitizeFilename(title)}.epub`;
+                    if (resultFileSize) resultFileSize.textContent = formatFileSize(epubBlob.size);
+                }, 500);
+            }, 1000);
+        } catch (error) {
+            clearInterval(progressInterval);
+            log(`Conversion error: ${error.message}`, 'error');
+            alert(`Error during conversion: ${error.message}`);
+            resetConverter();
+        }
+    }
+    
+    function getChapterPatternRegex() {
+        if (!chapterPattern) {
+            // Default fallback pattern
+            return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{1,20}$|^[Cc]hapter.{1,20}$|^[Pp]age.{1,20}$|^\d{1,4}$|^\d+、$|^引子$|^楔子$|^序章|^最终章 \w{1,20}$|^番外\d?\w{0,20}|^完本感言.{0,4}$/;
+        }
+        
+        switch (chapterPattern.value) {
+            case 'auto':
+                // Similar to the pattern in the kaf-cli Go code
+                return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{1,20}$|^[Cc]hapter.{1,20}$|^[Pp]age.{1,20}$|^\d{1,4}$|^\d+、$|^引子$|^楔子$|^序章|^最终章 \w{1,20}$|^番外\d?\w{0,20}|^完本感言.{0,4}$/;
+            case 'chinese':
+                return /^第[0-9一二三四五六七八九十百千万亿零〇]+[章节回集]/;
+            case 'english':
+                return /^(Chapter|CHAPTER)\s+\d+/i;
+            case 'japanese':
+                return /^第[0-9一二三四五六七八九十百千万億零〇]+話/;
+            case 'numbered':
+                return /^\d+\.\s+/;
+            case 'custom':
+                try {
+                    if (customChapterPattern && customChapterPattern.value) {
+                        return new RegExp(customChapterPattern.value);
+                    } else {
+                        log('Empty custom chapter pattern, using auto-detect instead', 'warning');
+                        return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{1,20}$|^[Cc]hapter.{1,20}$|^[Pp]age.{1,20}$|^\d{1,4}$|^\d+、$|^引子$|^楔子$|^序章|^最终章 \w{1,20}$|^番外\d?\w{0,20}|^完本感言.{0,4}$/;
+                    }
+                } catch (e) {
+                    log(`Invalid chapter regex pattern: ${e.message}`, 'error');
+                    alert('Invalid custom chapter pattern. Using auto-detect instead.');
+                    return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{1,20}$|^[Cc]hapter.{1,20}$|^[Pp]age.{1,20}$|^\d{1,4}$|^\d+、$|^引子$|^楔子$|^序章|^最终章 \w{1,20}$|^番外\d?\w{0,20}|^完本感言.{0,4}$/;
+                }
+            default:
+                return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{1,20}$|^[Cc]hapter.{1,20}$|^[Pp]age.{1,20}$|^\d{1,4}$|^\d+、$|^引子$|^楔子$|^序章|^最终章 \w{1,20}$|^番外\d?\w{0,20}|^完本感言.{0,4}$/;
+        }
+    }
+    
+    function getVolumePatternRegex() {
+        if (!volumePattern || volumePattern.value === 'disabled') {
+            return null;
+        }
+        
+        switch (volumePattern.value) {
+            case 'auto':
+                // Similar pattern to the kaf-cli Go code
+                return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部]|^Volume\s+\d+|^Book\s+\d+/i;
+            case 'chinese':
+                return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部]/;
+            case 'english':
+                return /^(Volume|Book)\s+\d+/i;
+            case 'custom':
+                try {
+                    if (customVolumePattern && customVolumePattern.value) {
+                        return new RegExp(customVolumePattern.value);
+                    } else {
+                        log('Empty custom volume pattern, using auto-detect instead', 'warning');
+                        return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部]|^Volume\s+\d+|^Book\s+\d+/i;
+                    }
+                } catch (e) {
+                    log(`Invalid volume regex pattern: ${e.message}`, 'error');
+                    alert('Invalid custom volume pattern. Using auto-detect instead.');
+                    return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部]|^Volume\s+\d+|^Book\s+\d+/i;
+                }
+            default:
+                return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部]|^Volume\s+\d+|^Book\s+\d+/i;
+        }
+    }
+    
+    function resetConverter() {
+        // Reset UI state
+        if (dropArea) dropArea.style.display = 'block';
+        if (fileInfo) fileInfo.style.display = 'none';
+        const optionsElement = document.querySelector('.options');
+        if (optionsElement) optionsElement.style.display = 'block';
+        if (progressArea) progressArea.style.display = 'none';
+        if (resultArea) resultArea.style.display = 'none';
+        
+        // Reset progress
+        if (progressBar) progressBar.style.width = '0%';
+        
+        // Show debug area if enabled
+        updateDebugArea();
+        
+        // Clear file inputs and data
+        selectedFile = null;
+        fileArrayBuffer = null;
+        processedText = null;
+        coverFile = null;
+        coverDataUrl = null;
+        if (fileInput) fileInput.value = '';
+        if (coverInput) coverInput.value = '';
+        
+        // Reset options to default if needed
+        if (chapterPattern && chapterPattern.value === 'custom' && customChapterPattern) {
+            customChapterPattern.value = '';
+        }
+        
+        if (volumePattern && volumePattern.value === 'custom' && customVolumePattern) {
+            customVolumePattern.value = '';
+        }
+        
+        // Reset cover options
+        if (coverSearch) coverSearch.checked = true;
+        if (coverUploadArea) coverUploadArea.style.display = 'none';
+        if (coverSearchArea) coverSearchArea.style.display = 'block';
+        if (coverPreviewArea) coverPreviewArea.style.display = 'block';
+        if (coverPreview) {
+            coverPreview.style.display = 'none';
+            coverPreview.src = '';
+        }
+        if (coverFileName) {
+            coverFileName.style.display = 'none';
+            coverFileName.textContent = '';
+        }
+        
+        // Clear EPUB blob
+        epubBlob = null;
+        
+        log('Converter reset');
+    }
+    
+    function downloadEpub() {
+        if (!epubBlob) {
+            log('Download error: No EPUB file generated', 'error');
+            alert('Error: No EPUB file generated');
+            return;
+        }
+        
+        const title = bookTitle && bookTitle.value ? bookTitle.value : 'Untitled_Book';
+        const filename = `${sanitizeFilename(title)}.epub`;
+        
+        // Check for FileSaver.js
+        if (typeof saveAs === 'undefined') {
+            log('FileSaver.js not found, using fallback download method', 'warning');
+            
+            // Fallback download method
+            const url = URL.createObjectURL(epubBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        } else {
+            // Use FileSaver.js
+            saveAs(epubBlob, filename);
+        }
+        
+        log(`EPUB downloaded as: ${filename}`);
+    }
+    
+    // Utility Functions
+    function sanitizeFilename(name) {
+        if (!name) return 'Untitled';
+        
+        return name
+            .replace(/[\/\\:*?"<>|]/g, '_') // Replace invalid filename characters
+            .replace(/\s+/g, '_')           // Replace spaces with underscores
+            .replace(/__+/g, '_')           // Replace multiple underscores with single
+            .replace(/^_+|_+$/g, '');       // Trim underscores from start and end
+    }
+    
+    function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(new Error(`Failed to read file: ${error}`));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // FIXED: Improved fetchImageAsDataURL function with proper error handling
+    async function fetchImageAsDataURL(imageUrl) {
+        try {
+            // Create a new image element
+            const img = new Image();
+            
+            // Set up a promise to handle the image loading
+            const imageLoaded = new Promise((resolve, reject) => {
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Failed to load image from URL: ' + imageUrl));
+                
+                // Set a timeout in case the image takes too long to load
+                const timeoutId = setTimeout(() => {
+                    reject(new Error('Timeout loading image from URL: ' + imageUrl));
+                }, 10000); // 10 second timeout
+                
+                // Clear timeout if image loads or errors
+                img.onload = () => {
+                    clearTimeout(timeoutId);
+                    resolve(img);
+                };
+                img.onerror = () => {
+                    clearTimeout(timeoutId);
+                    reject(new Error('Failed to load image from URL: ' + imageUrl));
+                };
+            });
+            
+            // Set the source to start loading the image
+            img.src = imageUrl;
+            
+            // Wait for the image to load
+            const loadedImg = await imageLoaded;
+            
+            // Create a canvas to convert the image to a data URL
+            const canvas = document.createElement('canvas');
+            canvas.width = loadedImg.width;
+            canvas.height = loadedImg.height;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw the image to the canvas
+            ctx.drawImage(loadedImg, 0, 0);
+            
+            // Try to get the data URL
+            try {
+                return canvas.toDataURL('image/jpeg');
+            } catch (error) {
+                throw new Error(`Failed to convert image to data URL: ${error.message}`);
+            }
+        } catch (error) {
+            log(`Error fetching image: ${error.message}`, 'error');
+            throw error;
+        }
+    }
+    
+    function cleanText(text) {
+        log('Cleaning text...');
+        
+        // Replace invisible control characters
+        text = text.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F\uFFFE\uFFFF]/g, '');
+        
+        // Normalize line endings to Unix-style
+        text = text.replace(/\r\n/g, '\n');
+        
+        // Replace XML special characters
+        text = text.replace(/</g, '&lt;');
+        text = text.replace(/>/g, '&gt;');
+        
+        // Handle encoding errors - common in Chinese texts
+        text = text.replace(/�/g, '');
+        
+        // Cleanup common issues in web novels
+        text = text.replace(/\/\/ www\..*\.com/g, '');
+        text = text.replace(/Please visit .*\.com/gi, '');
+        text = text.replace(/更多精校小说尽在.*/g, '');
+        
+        return text;
+    }
+    
+    // Text Processing Function
+    function processText(text, options) {
+        log('Processing text to detect chapters and volumes...');
+        
+        // Split text into lines
+        const lines = text.split('\n');
+        
+        // Initialize structure similar to the Go code
+        const sections = [];
+        let currentVolume = null;
+        let currentChapter = {
+            title: options.unknownTitleName,
+            type: 'text',
+            content: []
+        };
+        let hasContent = false;
+        
+        // Get regex patterns
+        const chapterPattern = options.chapterPattern;
+        const volumePattern = options.volumePattern;
+        const maxTitleLength = options.maxTitleLength;
+        
+        // Process each line
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            // Skip empty lines
+            if (!line) continue;
+            
+            // Skip unwanted content lines similar to Go code
+            if (line.includes("更多精校小说尽在") || 
+                line.includes("==========") ||
+                line === options.title ||
+                line === options.title + " 作者：" + options.author ||
+                line === "作者：" + options.author ||
+                line === "作者: " + options.author) {
+                continue;
+            }
+            
+            // Check if this line could be a title (based on length)
+            if (line.length <= maxTitleLength) {
+                let isVolume = volumePattern && volumePattern.test(line);
+                let isChapter = chapterPattern.test(line);
+                
+                // Special cases like "完本感言" (ending remarks), "番外" (side stories)
+                let isSpecial = /^完本感言|^番外/.test(line);
+                
+                if (isVolume) {
+                    // Save current chapter if it has content
+                    if (hasContent) {
+                        if (currentVolume) {
+                            currentVolume.chapters.push(currentChapter);
+                        } else {
+                            sections.push(currentChapter);
+                        }
+                    }
+                    
+                    // Save current volume if exists
+                    if (currentVolume) {
+                        sections.push(currentVolume);
+                    }
+                    
+                    // Create new volume
+                    currentVolume = {
+                        title: line,
+                        type: 'volume',
+                        chapters: []
+                    };
+                    
+                    // Reset chapter
+                    currentChapter = {
+                        title: options.unknownTitleName,
+                        type: 'text',
+                        content: []
+                    };
+                    hasContent = false;
+                    continue;
+                } else if (isChapter || isSpecial) {
+                    // Save current chapter if it has content
+                    if (hasContent) {
+                        if (currentVolume) {
+                            currentVolume.chapters.push(currentChapter);
+                        } else {
+                            sections.push(currentChapter);
+                        }
+                    }
+                    
+                    // Create new chapter
+                    currentChapter = {
+                        title: line,
+                        type: isSpecial ? 'special' : 'chapter',
+                        content: []
+                    };
+                    hasContent = false;
+                    continue;
+                }
+            }
+            
+            // Regular content line
+            currentChapter.content.push(line);
+            hasContent = true;
+        }
+        
+        // Add final chapter and volume
+        if (hasContent) {
+            if (currentVolume) {
+                currentVolume.chapters.push(currentChapter);
+                sections.push(currentVolume);
+            } else {
+                sections.push(currentChapter);
+            }
+        } else if (currentVolume && currentVolume.chapters.length > 0) {
+            sections.push(currentVolume);
+        }
+        
+        // Process paragraphs for each chapter
+        for (let i = 0; i < sections.length; i++) {
+            if (sections[i].type === 'volume') {
+                for (let j = 0; j < sections[i].chapters.length; j++) {
+                    sections[i].chapters[j].paragraphs = processParagraphs(
+                        sections[i].chapters[j].content
+                    );
+                }
+            } else {
+                sections[i].paragraphs = processParagraphs(
+                    sections[i].content
+                );
+            }
+        }
+        
+        log(`Found ${countSections(sections)} total sections (including volumes and chapters)`);
+        return sections;
+    }
+    
+    function countSections(sections) {
+        let count = 0;
+        for (let i = 0; i < sections.length; i++) {
+            if (sections[i].type === 'volume') {
+                count += 1 + sections[i].chapters.length;
+            } else {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    // Process paragraphs based on selected mode
+    function processParagraphs(lines) {
+        const paragraphs = [];
+        // Each line is a paragraph
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].trim()) {
+                paragraphs.push(lines[i]);
+            }
+        }
+                
+        return paragraphs;
+    }
+    
+    // EPUB Generation
+    async function generateEpub(sections, coverImageData, options) {
+        log('Generating EPUB file...');
+        try {
+            // Check if JSZip is available
+            if (typeof JSZip === 'undefined') {
+                throw new Error('JSZip library not found');
+            }
+            
+            // Create a new JSZip instance
+            const zip = new JSZip();
+            
+            // Add the mimetype file (must be first and uncompressed)
+            zip.file('mimetype', 'application/epub+zip', {compression: "STORE"});
+            
+            // Add META-INF/container.xml
+            zip.folder('META-INF').file('container.xml', 
+                '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">' +
+                '<rootfiles>' +
+                '<rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>' +
+                '</rootfiles>' +
+                '</container>'
+            );
+            
+            // Create OEBPS folder
+            const oebps = zip.folder('OEBPS');
+            
+            // Add CSS
+            const fontFamilyCSS = getFontFamilyCSS(options.fontFamily);
+            const textAlignCSS = options.titleAlign === 'center' ? 'text-align: center;' : 
+                                options.titleAlign === 'right' ? 'text-align: right;' : 'text-align: left;';
+            const indentSize = options.indent + 'em';
+            
+            const styleContent = 
+                `body { ${fontFamilyCSS}; margin: 5%; line-height: ${options.lineHeight}; font-size: ${options.fontSize}; }
+                h1 { ${textAlignCSS} margin-bottom: 2em; font-weight: bold; }
+                h2 { ${textAlignCSS} margin-top: 3em; margin-bottom: 1em; font-weight: bold; }
+                p { text-indent: ${indentSize}; margin: 0; margin-bottom: ${options.paragraphSpacing}; }
+                .title { text-align: center; font-size: 2em; font-weight: bold; margin-bottom: 0.5em; }
+                .author { text-align: center; font-size: 1.5em; margin-bottom: 2em; }
+                .volume { font-size: 1.7em; font-weight: bold; ${textAlignCSS} margin: 3em 0 1.5em 0; }
+                .chapter { font-size: 1.5em; font-weight: normal; ${textAlignCSS} margin: 2em 0 1em 0; }
+                .special { font-style: italic; ${textAlignCSS} margin: 2em 0 1em 0; }
+                @media amzn-kf8 { body { font-family: "Amazon Ember", "Bookerly", serif; } }
+                @media amzn-mobi { body { font-family: serif; } }`;
+            
+            oebps.file('stylesheet.css', styleContent);
+            
+            // Generate a unique ID
+            const uuid = 'urn:uuid:' + generateUUID();
+            
+            // Handle cover image
+            let coverImagePath = null;
+            let coverImageType = 'image/jpeg';
+            
+            if (coverImageData) {
+                // Determine image type and extract base64 data
+                let base64Data;
+                if (coverImageData.startsWith('data:')) {
+                    // Data URL format
+                    const matches = coverImageData.match(/^data:([^;]+);base64,(.+)$/);
+                    if (matches && matches.length >= 3) {
+                        coverImageType = matches[1];
+                        base64Data = matches[2];
+                    } else {
+                        throw new Error('Invalid cover image data URL');
+                    }
+                } else {
+                    // Already base64
+                    base64Data = coverImageData;
+                }
+                
+                // Determine file extension based on MIME type
+                let ext = 'jpg';
+                if (coverImageType === 'image/png') ext = 'png';
+                if (coverImageType === 'image/gif') ext = 'gif';
+                if (coverImageType === 'image/webp') ext = 'webp';
+                
+                // Create images folder
+                const images = oebps.folder('images');
+                coverImagePath = `images/cover.${ext}`;
+                images.file(`cover.${ext}`, base64Data, {base64: true});
+            }
+            
+            // Create title page
+            oebps.file('title.xhtml',
+                '<?xml version="1.0" encoding="UTF-8"?>' +
+                `<!DOCTYPE html>` +
+                `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}">` +
+                '<head>' +
+                '<meta charset="UTF-8" />' +
+                `<title>${escapeXML(options.title)}</title>` +
+                '<link rel="stylesheet" type="text/css" href="stylesheet.css" />' +
+                '</head>' +
+                '<body>' +
+                `<div class="title">${escapeXML(options.title)}</div>` +
+                `<div class="author">${escapeXML(options.author)}</div>` +
+                '</body>' +
+                '</html>'
+            );
+            
+            // Create cover page if we have a cover image
+            if (coverImagePath) {
+                oebps.file('cover.xhtml',
+                    '<?xml version="1.0" encoding="UTF-8"?>' +
+                    `<!DOCTYPE html>` +
+                    `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}">` +
+                    '<head>' +
+                    '<meta charset="UTF-8" />' +
+                    '<title>Cover</title>' +
+                    '<link rel="stylesheet" type="text/css" href="stylesheet.css" />' +
+                    '<style>body{margin:0;padding:0;text-align:center;}img{max-width:100%;height:100vh;}</style>' +
+                    '</head>' +
+                    '<body>' +
+                    '<div id="cover-image">' +
+                    `<img src="${coverImagePath}" alt="Cover Image" />` +
+                    '</div>' +
+                    '</body>' +
+                    '</html>'
+                );
+            }
+            
+            // Create chapter files and build TOC data
+            let navItems = [];
+            let navMapItems = '';
+            let manifestItems = '';
+            let spineItems = '';
+            
+            // If we have a cover, add it to manifest and spine
+            if (coverImagePath) {
+                manifestItems += `<item id="cover-image" href="${coverImagePath}" media-type="${coverImageType}" properties="cover-image" />`;
+                manifestItems += `<item id="cover-xhtml" href="cover.xhtml" media-type="application/xhtml+xml" />`;
+                spineItems += `<itemref idref="cover-xhtml" />`;
+            }
+            
+            // Add title page to manifest and spine
+            manifestItems += `<item id="title" href="title.xhtml" media-type="application/xhtml+xml" />`;
+            spineItems += `<itemref idref="title" />`;
+            
+            // Add stylesheet to manifest
+            manifestItems += `<item id="css" href="stylesheet.css" media-type="text/css" />`;
+            
+            // Navigation counter for epub:type landmarks
+            let navCounter = 1;
+            
+            // Process sections
+            let fileCounter = 1;
+            
+            for (let i = 0; i < sections.length; i++) {
+                const section = sections[i];
+                
+                if (section.type === 'volume') {
+                    // Volume section with chapters
+                    const volumeId = `volume_${i + 1}`;
+                    const volumeFileName = `${volumeId}.xhtml`;
+                    const volumeTitle = section.title;
+                    
+                    // Create volume content
+                    let volumeContent = 
+                        '<?xml version="1.0" encoding="UTF-8"?>' +
+                        `<!DOCTYPE html>` +
+                        `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}">` +
+                        '<head>' +
+                        '<meta charset="UTF-8" />' +
+                        `<title>${escapeXML(volumeTitle)}</title>` +
+                        '<link rel="stylesheet" type="text/css" href="stylesheet.css" />' +
+                        '</head>' +
+                        '<body>' +
+                        `<h1 class="volume" epub:type="volume">${escapeXML(volumeTitle)}</h1>` +
+                        '</body></html>';
+                    
+                    // Add volume file
+                    oebps.file(volumeFileName, volumeContent);
+                    
+                    // Add to manifest and spine
+                    manifestItems += `<item id="${volumeId}" href="${volumeFileName}" media-type="application/xhtml+xml" />`;
+                    spineItems += `<itemref idref="${volumeId}" />`;
+                    
+                    // Add to navigation
+                    navItems.push({
+                        id: volumeId,
+                        title: volumeTitle,
+                        fileName: volumeFileName,
+                        type: 'volume',
+                        children: []
+                    });
+                    
+                    // Add to NCX
+                    navMapItems += 
+                        `<navPoint id="navpoint-${navCounter}" playOrder="${navCounter}">` +
+                        `<navLabel><text>${escapeXML(volumeTitle)}</text></navLabel>` +
+                        `<content src="${volumeFileName}" />`;
+                    
+                    let volumeNavCounter = navCounter;
+                    navCounter++;
+                    
+                    // Process chapters in this volume
+                    for (let j = 0; j < section.chapters.length; j++) {
+                        const chapter = section.chapters[j];
+                        const chapterId = `chapter_${fileCounter}`;
+                        const chapterFileName = `${chapterId}.xhtml`;
+                        const chapterTitle = chapter.title;
+                        fileCounter++;
+                        
+                        // Create chapter content
+                        let chapterContent = 
+                            '<?xml version="1.0" encoding="UTF-8"?>' +
+                            `<!DOCTYPE html>` +
+                            `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}">` +
+                            '<head>' +
+                            '<meta charset="UTF-8" />' +
+                            `<title>${escapeXML(chapterTitle)}</title>` +
+                            '<link rel="stylesheet" type="text/css" href="stylesheet.css" />' +
+                            '</head>' +
+                            '<body>' +
+                            `<h2 class="${chapter.type}" epub:type="${chapter.type}">${escapeXML(chapterTitle)}</h2>`;
+                        
+                        // Add chapter paragraphs
+                        if (chapter.paragraphs && chapter.paragraphs.length > 0) {
+                            for (let k = 0; k < chapter.paragraphs.length; k++) {
+                                chapterContent += `<p>${escapeXML(chapter.paragraphs[k])}</p>`;
+                            }
+                        }
+                        
+                        chapterContent += '</body></html>';
+                        
+                        // Add chapter file
+                        oebps.file(chapterFileName, chapterContent);
+                        
+                        // Add to manifest
+                        manifestItems += `<item id="${chapterId}" href="${chapterFileName}" media-type="application/xhtml+xml" />`;
+                        
+                        // Add to spine
+                        spineItems += `<itemref idref="${chapterId}" />`;
+                        
+                        // Add to navigation
+                        navItems[navItems.length - 1].children.push({
+                            id: chapterId,
+                            title: chapterTitle,
+                            fileName: chapterFileName,
+                            type: chapter.type
+                        });
+                        
+                        // Add to NCX
+                        navMapItems += 
+                            `<navPoint id="navpoint-${navCounter}" playOrder="${navCounter}">` +
+                            `<navLabel><text>${escapeXML(chapterTitle)}</text></navLabel>` +
+                            `<content src="${chapterFileName}" />` +
+                            `</navPoint>`;
+                        
+                        navCounter++;
+                    }
+                    
+                    // Close volume navPoint
+                    navMapItems += `</navPoint>`;
+                } else {
+                    // Regular section/chapter without a volume
+                    const chapterId = `chapter_${fileCounter}`;
+                    const chapterFileName = `${chapterId}.xhtml`;
+                    const chapterTitle = section.title;
+                    fileCounter++;
+                    
+                    // Create chapter content
+                    let chapterContent = 
+                        '<?xml version="1.0" encoding="UTF-8"?>' +
+                        `<!DOCTYPE html>` +
+                        `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}">` +
+                        '<head>' +
+                        '<meta charset="UTF-8" />' +
+                        `<title>${escapeXML(chapterTitle)}</title>` +
+                        '<link rel="stylesheet" type="text/css" href="stylesheet.css" />' +
+                        '</head>' +
+                        '<body>' +
+                        `<h2 class="${section.type}" epub:type="${section.type}">${escapeXML(chapterTitle)}</h2>`;
+                    
+                    // Add chapter paragraphs
+                    if (section.paragraphs && section.paragraphs.length > 0) {
+                        for (let j = 0; j < section.paragraphs.length; j++) {
+                            chapterContent += `<p>${escapeXML(section.paragraphs[j])}</p>`;
+                        }
+                    }
+                    
+                    chapterContent += '</body></html>';
+                    
+                    // Add chapter file
+                    oebps.file(chapterFileName, chapterContent);
+                    
+                    // Add to manifest
+                    manifestItems += `<item id="${chapterId}" href="${chapterFileName}" media-type="application/xhtml+xml" />`;
+                    
+                    // Add to spine
+                    spineItems += `<itemref idref="${chapterId}" />`;
+                    
+                    // Add to navigation
+                    navItems.push({
+                        id: chapterId,
+                        title: chapterTitle,
+                        fileName: chapterFileName,
+                        type: section.type
+                    });
+                    
+                    // Add to NCX
+                    navMapItems += 
+                        `<navPoint id="navpoint-${navCounter}" playOrder="${navCounter}">` +
+                        `<navLabel><text>${escapeXML(chapterTitle)}</text></navLabel>` +
+                        `<content src="${chapterFileName}" />` +
+                        `</navPoint>`;
+                    
+                    navCounter++;
+                }
+            }
+            
+            // Create NCX file (for EPUB 2 compatibility)
+            const ncxContent = 
+                '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">' +
+                '<head>' +
+                `<meta name="dtb:uid" content="${uuid}"/>` +
+                '<meta name="dtb:depth" content="2"/>' +
+                '<meta name="dtb:totalPageCount" content="0"/>' +
+                '<meta name="dtb:maxPageNumber" content="0"/>' +
+                '</head>' +
+                `<docTitle><text>${escapeXML(options.title)}</text></docTitle>` +
+                '<navMap>' +
+                navMapItems +
+                '</navMap>' +
+                '</ncx>';
+            
+            oebps.file('toc.ncx', ncxContent);
+            
+            // Add NCX to manifest
+            manifestItems += `<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml" />`;
+ 
+            let navContent = 
+                '<?xml version="1.0" encoding="UTF-8"?>' +
+                `<!DOCTYPE html>` +
+                `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}">` +
+                '<head>' +
+                '<meta charset="UTF-8" />' +
+                '<title>Table of Contents</title>' +
+                '<link rel="stylesheet" type="text/css" href="stylesheet.css" />' +
+                '</head>' +
+                '<body>' +
+                '<nav epub:type="toc" id="toc">' +
+                `<h1>Table of Contents</h1>` +
+                '<ol>';
+            
+            // Add navigation items
+            for (let i = 0; i < navItems.length; i++) {
+                if (navItems[i].type === 'volume' && navItems[i].children.length > 0) {
+                    // Volume with chapters
+                    navContent += `<li><a href="${navItems[i].fileName}">${escapeXML(navItems[i].title)}</a>`;
+                    
+                    if (navItems[i].children.length > 0) {
+                        navContent += '<ol>';
+                        for (let j = 0; j < navItems[i].children.length; j++) {
+                            navContent += `<li><a href="${navItems[i].children[j].fileName}">${escapeXML(navItems[i].children[j].title)}</a></li>`;
+                        }
+                        navContent += '</ol>';
+                    }
+                    
+                    navContent += '</li>';
+                } else {
+                    // Regular chapter
+                    navContent += `<li><a href="${navItems[i].fileName}">${escapeXML(navItems[i].title)}</a></li>`;
+                }
+            }
+            
+            navContent += '</ol></nav>';
+            
+            // Add landmarks
+            navContent += 
+                '<nav epub:type="landmarks" hidden="">' +
+                '<h2>Landmarks</h2>' +
+                '<ol>';
+            
+            // Cover landmark
+            if (coverImagePath) {
+                navContent += `<li><a epub:type="cover" href="cover.xhtml">Cover</a></li>`;
+            }
+            
+            // Title page landmark
+            navContent += `<li><a epub:type="titlepage" href="title.xhtml">Title Page</a></li>`;
+            
+            // First content landmark
+            if (navItems.length > 0) {
+                const firstContentItem = navItems[0].type === 'volume' && navItems[0].children.length > 0 ? 
+                                        navItems[0].children[0] : navItems[0];
+                navContent += `<li><a epub:type="bodymatter" href="${firstContentItem.fileName}">Beginning</a></li>`;
+            }
+            
+            navContent += '</ol></nav></body></html>';
+            
+            oebps.file('nav.xhtml', navContent);
+            
+            // Add nav to manifest
+            manifestItems += `<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav" />`;
+        
+            
+            // Create content.opf
+            let contentOpf = 
+                    '<?xml version="1.0" encoding="UTF-8"?>' +
+                    '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookID">' +
+                    '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">' +
+                    `<dc:title>${escapeXML(options.title)}</dc:title>` +
+                    `<dc:creator>${escapeXML(options.author)}</dc:creator>` +
+                    `<dc:language>${options.language}</dc:language>` +
+                    `<dc:identifier id="BookID">${uuid}</dc:identifier>` +
+                    `<meta property="dcterms:modified">${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</meta>`;
+                
+                if (coverImagePath) {
+                    contentOpf += `<meta name="cover" content="cover-image" />`;
+                }
+                
+                contentOpf += '</metadata><manifest>' + manifestItems + '</manifest>' +
+                             '<spine toc="ncx">' + spineItems + '</spine></package>';
+            
+            oebps.file('content.opf', contentOpf);
+            
+            // Generate EPUB file
+            try {
+                const epubBlob = await zip.generateAsync({
+                    type: 'blob',
+                    mimeType: 'application/epub+zip',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 9 }
+                });
+                
+                return epubBlob;
+            } catch (error) {
+                log(`Error generating EPUB blob: ${error.message}`, 'error');
+                throw error;
+            }
+        } catch (error) {
+            log(`Error generating EPUB: ${error.message}`, 'error');
+            throw error;
+        }
+    }
+    
+    // Utility functions for EPUB creation
+    function getFontFamilyCSS(fontType) {
+        switch (fontType) {
+            case 'serif':
+                return 'font-family: "Noto Serif", "Georgia", "Times New Roman", serif';
+            case 'sans':
+                return 'font-family: "Noto Sans", "Segoe UI", "Helvetica Neue", sans-serif';
+            case 'mono':
+                return 'font-family: "Noto Mono", "Courier New", monospace';
+            default:
+                return 'font-family: "Noto Serif CJK SC", "Songti SC", "SimSun", serif';
+        }
+    }
+    
+    function escapeXML(text) {
+        if (!text) return '';
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    }
+    
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+});
+ </script>
+</body>
+</html>
