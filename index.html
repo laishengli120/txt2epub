@@ -591,11 +591,38 @@
             border-radius: 4px;
             overflow: hidden;
             box-shadow: var(--graphic-shadow);
+            position: relative; /* For the change cover button */
         }
+        .summary-cover:hover .change-cover-btn {
+            opacity: 1;
+        }
+        .change-cover-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            line-height: 30px;
+            text-align: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+         .change-cover-btn:hover {
+            background-color: rgba(0,0,0,0.8);
+         }
+
         .summary-cover img { max-width: 100%; max-height: 100%; object-fit: cover; display: none; } /* Hide initially */
         #summaryCoverPlaceholder { color: var(--memphis-dark); font-size: 0.8rem; text-align: center; padding: 10px; font-weight: 600; }
         .summary-cover img[src]:not([src=""]):not([src*="placehold.co"]) { display: block; } /* Show if src is valid */
         .summary-cover img[src]:not([src=""]):not([src*="placehold.co"]) + #summaryCoverPlaceholder { display: none; } /* Hide placeholder if image shown */
+        .summary-cover img[src*="placehold.co"] + #summaryCoverPlaceholder { display: block; } /* Show placeholder if placeholder image */
 
 
         /* --- Progress & Result Areas --- */
@@ -658,6 +685,57 @@
         .debug-log div { margin-bottom: 5px; border-bottom: 1px dotted #555; padding-bottom: 5px; word-break: break-all; }
         .debug-log div:last-child { border-bottom: none; }
 
+        /* Cover Preview in Sidebar */
+        .cover-preview-container {
+            text-align: center;
+            margin-top: 15px;
+            position: relative; /* For navigation buttons */
+        }
+        .cover-preview {
+            max-width: 100%;
+            max-height: 200px;
+            display: none;
+            margin: 0 auto;
+            border: var(--bold-border);
+            border-radius: var(--border-radius);
+            box-shadow: var(--graphic-shadow);
+        }
+        .cover-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .cover-nav-btn {
+            background-color: var(--memphis-secondary);
+            color: var(--memphis-dark);
+            border: var(--bold-border);
+            border-radius: var(--border-radius);
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px var(--memphis-dark);
+            transition: var(--transition);
+        }
+        .cover-nav-btn:hover {
+            background-color: var(--memphis-accent1);
+            transform: translateY(-1px) translateX(-1px);
+            box-shadow: 3px 3px 0px var(--memphis-dark);
+        }
+        .cover-nav-btn:disabled {
+            background-color: #ccc;
+            color: #777;
+            cursor: not-allowed;
+            box-shadow: none;
+            border-color: #aaa;
+        }
+        #coverIndicator {
+            font-size: 0.9rem;
+            color: var(--memphis-dark);
+            font-weight: 600;
+        }
+
+
         /* --- Responsive Adjustments --- */
         @media (max-width: 992px) {
              /* Mobile view - sidebar slides out */
@@ -703,8 +781,9 @@
              .file-preview { border-radius: var(--border-radius); border: var(--bold-border); background-color: var(--memphis-accent2); box-shadow: var(--graphic-shadow); margin-bottom: 15px; }
              .convert-btn { width: 100%; border-radius: var(--border-radius); border: var(--bold-border); box-shadow: var(--graphic-shadow); border-left: var(--bold-border); /* Keep border consistent */ }
              .convert-btn:hover { transform: translateY(-3px) translateX(-3px) skewX(0); box-shadow: 8px 8px 0px var(--memphis-dark);  } /* Use standard hover */
-             .summary-container { flex-direction: row; align-items: center;}
-             .summary-cover { margin-top: 15px; }
+             .summary-container { flex-direction: column; align-items: center;} /* Changed to column for better spacing */
+             .summary-text { width: 100%; margin-bottom: 15px; }
+             .summary-cover { margin-top: 0; }
         }
         
         @media (max-width: 576px) {
@@ -862,7 +941,14 @@
                             </div>
                         </div>
                         
-                        <div class="cover-preview-container" id="coverPreviewArea" style="text-align: center;"> <img id="coverPreview" class="cover-preview" style="max-width: 100%; max-height: 200px; display: none; margin: 0 auto;"> </div>
+                        <div class="cover-preview-container" id="coverPreviewArea">
+                            <img id="coverPreview" class="cover-preview" src="" alt="封面预览">
+                            <div class="cover-navigation" id="coverNavigationControls" style="display: none;">
+                                <button id="prevCoverBtn" class="cover-nav-btn"><i class="fas fa-chevron-left"></i></button>
+                                <span id="coverIndicator">1 / 1</span>
+                                <button id="nextCoverBtn" class="cover-nav-btn"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -955,14 +1041,17 @@
                                 <div id="configDetails">
                                     <p><strong>标题:</strong> <span id="summaryTitle">未设置</span></p>
                                     <p><strong>作者:</strong> <span id="summaryAuthor">未设置</span></p>
-                                    <p><strong>封面:</strong> <span id="summaryCover">起点网</span></p>
+                                    <p><strong>封面:</strong> <span id="summaryCoverSourceText">起点网</span></p>
                                     <p><strong>大小:</strong> <span id="txtFileSize">N/A</span></p>
                                     <p><strong>编码:</strong> <span id="txtEncoding">检测中...</span></p>
                                 </div>
                             </div>
-                            <div class="summary-cover">
+                            <div class="summary-cover" id="summaryCoverContainer">
                                 <img id="summaryCoverPreview" src="" alt="封面预览">
                                 <div id="summaryCoverPlaceholder">等待封面...</div>
+                                <button class="change-cover-btn" id="changeCoverInSummaryBtn" title="更换封面">
+                                    <i class="fas fa-pen"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1058,7 +1147,14 @@
             const coverFileName = document.getElementById('coverFileName');
             const summaryTitle = document.getElementById('summaryTitle');
             const summaryAuthor = document.getElementById('summaryAuthor');
-            const summaryCover = document.getElementById('summaryCover');
+            const summaryCoverSourceText = document.getElementById('summaryCoverSourceText');
+            const summaryCoverPreview = document.getElementById('summaryCoverPreview');
+            const summaryCoverPlaceholder = document.getElementById('summaryCoverPlaceholder');
+            const changeCoverInSummaryBtn = document.getElementById('changeCoverInSummaryBtn');
+            const coverNavigationControls = document.getElementById('coverNavigationControls');
+            const prevCoverBtn = document.getElementById('prevCoverBtn');
+            const nextCoverBtn = document.getElementById('nextCoverBtn');
+            const coverIndicator = document.getElementById('coverIndicator');
             const indent = document.getElementById('indent');
             const titleAlign = document.getElementById('titleAlign');
             const fontFamily = document.getElementById('fontFamily');
@@ -1089,6 +1185,9 @@
             let fileArrayBuffer = null;
             let processedText = null;
             let isSearchingCover = false;
+            let qidianCoverResults = [];
+            let currentQidianCoverIndex = 0;
+
 
             // Initialize
             initializeApp();
@@ -1130,6 +1229,10 @@
                         if (sidebar) sidebar.classList.toggle('sidebar-visible');
                         if(sidebar && sidebar.classList.contains('sidebar-visible') && sidebarContent) {
                             sidebarContent.classList.add('expanded');
+                             // If opening sidebar on mobile, ensure the first tab is active if none are
+                            if (!document.querySelector('.sidebar-icon.active')) {
+                                activateSection('bookInfoSection', document.querySelector('.sidebar-icon[data-section="bookInfoSection"]'));
+                            }
                         }
                         updateMainContentMargin();
                     });
@@ -1144,18 +1247,33 @@
                             updateMainContentMargin(); 
                         }
                     }
-                    else if (window.innerWidth > 992 && sidebarContent && sidebarContent.classList.contains('expanded')) {
-                        // 点击除上传区域外的区域，关闭sidebarContent
-                        if (!uploadCard.contains(event.target) && sidebarContent.classList.contains('expanded') && !sidebar.contains(event.target)) {
-                            sidebarContent.classList.remove('expanded');
-                            if(sidebarIcons) sidebarIcons.forEach(icon => icon.classList.remove('active'));
-                            updateMainContentMargin(); 
-                        }
-                    }
+                    // This logic for closing sidebar on desktop was a bit aggressive.
+                    // Commenting out for now, as it might interfere with interactions within the main content.
+                    // else if (window.innerWidth > 992 && sidebarContent && sidebarContent.classList.contains('expanded')) {
+                    //     if (!uploadCard.contains(event.target) && sidebarContent.classList.contains('expanded') && !sidebar.contains(event.target) && !mainContent.contains(event.target)) {
+                    //         sidebarContent.classList.remove('expanded');
+                    //         if(sidebarIcons) sidebarIcons.forEach(icon => icon.classList.remove('active'));
+                    //         updateMainContentMargin(); 
+                    //     }
+                    // }
                 });
 
                 window.addEventListener('resize', handleResize);
                 handleResize(); 
+
+                if (changeCoverInSummaryBtn) {
+    changeCoverInSummaryBtn.addEventListener('click', (event) => { // 传入 event 对象
+        event.stopPropagation(); // 阻止事件冒泡
+        activateSection('coverSection', document.querySelector('.sidebar-icon[data-section="coverSection"]'));
+        if (window.innerWidth <= 992 && sidebar && !sidebar.classList.contains('sidebar-visible')) {
+            sidebar.classList.add('sidebar-visible');
+        }
+         if (sidebarContent && !sidebarContent.classList.contains('expanded')) {
+            sidebarContent.classList.add('expanded');
+        }
+        updateMainContentMargin();
+    });
+}
             }
 
             function activateSection(sectionId, iconElement) {
@@ -1172,14 +1290,13 @@
                 
                 if (sidebarContent && !sidebarContent.classList.contains('expanded')) {
                     sidebarContent.classList.add('expanded');
-                    updateMainContentMargin();
                 }
+                 updateMainContentMargin(); // Call this after ensuring content is expanded
             }
 
             function handleResize() {
                 if (window.innerWidth > 992) {
                     if (sidebar) sidebar.classList.remove('sidebar-visible');
-
                 }
                 updateMainContentMargin(); 
             }
@@ -1188,17 +1305,17 @@
                 if (!mainContent || !sidebar || !sidebarContent) return;
 
                 if (window.innerWidth > 992) { 
+                    // Desktop: Margin depends on whether the detailed content panel is open
                     if (sidebarContent.classList.contains('expanded')) {
                         mainContent.style.marginLeft = `var(--sidebar-width)`;
                     } else {
                         mainContent.style.marginLeft = `var(--icons-width)`;
                     }
                 } else { 
-                    if (sidebar.classList.contains('sidebar-visible')) {
-                        mainContent.style.marginLeft = `var(--icons-width)`;
-                    } else {
-                        mainContent.style.marginLeft = '0px';
-                    }
+                    // Mobile: Margin depends on whether the icon bar itself is visible (sliding out)
+                    // No margin needed if sidebar is hidden, icons-width if it's visible.
+                    // The sidebarContent panel is always full width on mobile when expanded.
+                     mainContent.style.marginLeft = '0px'; // Default for mobile when sidebar is hidden
                 }
             }
 
@@ -1274,11 +1391,20 @@
                     coverFile = coverInput.files[0];
                     if (!coverFile.type.startsWith('image/')) {
                         log('Error: Not an image file', 'error'); alert('Please select a valid image file');
-                        coverFile = null; coverInput.value = ''; if(coverFileName) coverFileName.textContent = ''; if(coverFileName) coverFileName.style.display = 'none'; if(coverPreview) coverPreview.src = ''; if(coverPreview) coverPreview.style.display = 'none'; updateSummary(); return;
+                        coverFile = null; coverInput.value = ''; if(coverFileName) coverFileName.textContent = ''; if(coverFileName) coverFileName.style.display = 'none'; if(coverPreview) coverPreview.src = ''; if(coverPreview) coverPreview.style.display = 'none'; 
+                        qidianCoverResults = []; currentQidianCoverIndex = 0; updateCoverNavigation();
+                        updateSummary(); return;
                     }
                     if(coverFileName) coverFileName.textContent = `已选择: ${coverFile.name}`; if(coverFileName) coverFileName.style.display = 'block';
                     const reader = new FileReader();
-                    reader.onload = (e) => { coverDataUrl = e.target.result; if(coverPreview) { coverPreview.src = coverDataUrl; coverPreview.style.display = 'block';} updateSummary(); log('Local cover image loaded.'); };
+                    reader.onload = (e) => { 
+                        coverDataUrl = e.target.result; 
+                        qidianCoverResults = []; currentQidianCoverIndex = 0; // Reset Qidian search if local is chosen
+                        updateCoverNavigation(); // Hide Qidian nav
+                        if(coverPreview) { coverPreview.src = coverDataUrl; coverPreview.style.display = 'block';} 
+                        updateSummary(); 
+                        log('Local cover image loaded.'); 
+                    };
                     reader.onerror = (error) => { log(`Error reading cover file: ${error}`, 'error'); coverDataUrl = null; updateSummary(); };
                     reader.readAsDataURL(coverFile);
                 }
@@ -1287,6 +1413,7 @@
                 selectedFile = null; fileArrayBuffer = null; processedText = null; epubBlob = null; detectedEncoding = null;
                 if (fileInput) fileInput.value = ''; if (txtPreview) txtPreview.style.display = 'none'; if (fileInfo) fileInfo.style.display = 'none'; if (dropArea) dropArea.style.display = 'block'; if (txtFileName) txtFileName.textContent = ''; if (txtFileSize) txtFileSize.textContent = ''; if (txtEncoding) txtEncoding.textContent = '';
                 coverFile = null; coverDataUrl = null; if (coverInput) coverInput.value = ''; if (coverFileName) { coverFileName.textContent = ''; coverFileName.style.display = 'none'; } if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; }
+                qidianCoverResults = []; currentQidianCoverIndex = 0; updateCoverNavigation();
                 if (bookTitle) bookTitle.value = ''; if (bookAuthor) bookAuthor.value = '';
                 updateSummary(); log('File and associated data cleared.');
             }
@@ -1294,7 +1421,20 @@
             // --- Settings Logic ---
             function setupSettingsEventListeners() {
                 const coverOptionRadios = document.querySelectorAll('input[name="coverOption"]');
-                coverOptionRadios.forEach(radio => radio.addEventListener('change', () => { toggleCoverOptions(); if (selectedFile && coverSearch && coverSearch.checked) searchQidianCover(); updateSummary(); }));
+                coverOptionRadios.forEach(radio => radio.addEventListener('change', () => { 
+                    toggleCoverOptions(); 
+                    if (selectedFile && coverSearch && coverSearch.checked) {
+                        searchQidianCover(); 
+                    } else if (coverSearch && !coverSearch.checked) {
+                        qidianCoverResults = []; // Clear Qidian results if not active
+                        currentQidianCoverIndex = 0;
+                        if (!coverUpload.checked || !coverFile) { // If not uploading or no file, clear preview
+                             coverDataUrl = null;
+                        }
+                        updateCoverNavigation();
+                    }
+                    updateSummary(); 
+                }));
                 if (selectCoverBtn && coverInput) { selectCoverBtn.addEventListener('click', () => coverInput.click()); coverInput.addEventListener('change', handleCoverSelect); }
                 if (chapterPattern && customChapterArea) chapterPattern.addEventListener('change', () => { customChapterArea.style.display = chapterPattern.value === 'custom' ? 'block' : 'none'; updateSummary(); });
                 if (volumePattern && customVolumeArea) volumePattern.addEventListener('change', () => { customVolumeArea.style.display = volumePattern.value === 'custom' ? 'block' : 'none'; updateSummary(); });
@@ -1304,47 +1444,157 @@
                 [indent, titleAlign, fontFamily, fontSize, lineHeight, paragraphSpacing].forEach(el => {
                      if(el) el.addEventListener('change', updateSummary);
                 });
+
+                if (prevCoverBtn) prevCoverBtn.addEventListener('click', () => navigateQidianCovers(-1));
+                if (nextCoverBtn) nextCoverBtn.addEventListener('click', () => navigateQidianCovers(1));
             }
+
             function toggleCoverOptions() {
                 const coverSearchChecked = coverSearch && coverSearch.checked;
                 const coverUploadChecked = coverUpload && coverUpload.checked;
                 if (coverUploadArea) coverUploadArea.style.display = coverUploadChecked ? 'block' : 'none';
                 if (coverPreviewArea) coverPreviewArea.style.display = (coverSearchChecked || coverUploadChecked) ? 'block' : 'none';
-                if (coverNone && coverNone.checked) { if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; } coverDataUrl = null; }
-                if (!coverUploadChecked) {
-                    coverFile = null;
-                    if(coverInput) coverInput.value = '';
+                
+                if (coverNone && coverNone.checked) { 
+                    if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; } 
+                    coverDataUrl = null; 
+                    qidianCoverResults = []; currentQidianCoverIndex = 0;
+                }
+                if (!coverUploadChecked) { // If upload is not checked, clear its specific fields
+                    // coverFile = null; // Keep coverFile if it was uploaded, user might switch back
+                    // if(coverInput) coverInput.value = ''; // Don't clear input, user might switch back
                     if(coverFileName) { coverFileName.textContent = ''; coverFileName.style.display = 'none'; }
                 }
-                updateSummary();
+                 updateCoverNavigation(); // Always update nav visibility based on current state
+                 updateSummary();
             }
+
             async function searchQidianCover() {
                 if (isSearchingCover) { log('Cover search already in progress.', 'info'); return; }
                 const bookname = bookTitle.value;
-                if (!bookname) { log('Cannot search for cover: No book title provided.', 'warning'); if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; } coverDataUrl = null; updateSummary(); return; }
+                if (!bookname) { log('Cannot search for cover: No book title provided.', 'warning'); if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; } coverDataUrl = null; qidianCoverResults = []; currentQidianCoverIndex = 0; updateCoverNavigation(); updateSummary(); return; }
+                
                 isSearchingCover = true; if (convertBtn) convertBtn.disabled = true;
                 const searchingPlaceholder = 'https://placehold.co/150x225/e9ecef/6c757d?text=Searching...';
                 if (coverPreview) { coverPreview.src = searchingPlaceholder; coverPreview.style.display = 'block'; }
+                qidianCoverResults = []; currentQidianCoverIndex = 0; updateCoverNavigation();
                 updateSummary(); log(`Searching for Qidian cover with query: ${bookname}`);
+                
                 try {
-                    const corsProxy = 'https://corsproxy.io/?'; const targetUrl = encodeURIComponent(`https://m.qidian.com/soushu/${encodeURIComponent(bookname)}.html`); const proxyUrl = corsProxy + targetUrl;
-                    log(`Connecting to Qidian search URL: ${targetUrl}`);
-                    const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 10000);
-                    const response = await fetch(proxyUrl, { signal: controller.signal }); clearTimeout(timeoutId);
+                    const corsProxy = 'https://corsproxy.io/?'; 
+                    const targetUrl = encodeURIComponent(`https://m.qidian.com/soushu/${encodeURIComponent(bookname)}.html`); 
+                    const proxyUrl = corsProxy + targetUrl;
+                    log(`Connecting to Qidian search URL: ${proxyUrl}`); // Log proxied URL
+                    
+                    const controller = new AbortController(); 
+                    const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
+
+                    const response = await fetch(proxyUrl, { signal: controller.signal }); 
+                    clearTimeout(timeoutId);
+                    
                     if (!response.ok) throw new Error(`Failed to fetch search results: ${response.status} ${response.statusText}`);
-                    const htmlContent = await response.text(); log('Received Qidian search page.');
-                    const match = htmlContent.match(/data-src="([^"]+)"/); if (!match) throw new Error('No cover image found in search results.');
-                    let imageUrl = match[1]; log(`Found image URL: ${imageUrl}`); imageUrl = 'https:' + imageUrl.slice(0, -3) + '600'; log(`Modified to large version: ${imageUrl}`);
-                    await checkImageExists(imageUrl);
-                    coverDataUrl = imageUrl; if (coverPreview) { coverPreview.src = imageUrl; coverPreview.style.display = 'block'; } log('Qidian cover search successful.');
+                    
+                    const htmlContent = await response.text(); 
+                    log('Received Qidian search page.');
+
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlContent, 'text/html');
+                    const imageElements = doc.querySelectorAll('.y-list__item img[data-src]'); // More specific selectors
+                    
+                    qidianCoverResults = [];
+                    imageElements.forEach(img => {
+                        let rawUrl = img.dataset.src || img.getAttribute('data-src');
+                        if (rawUrl) {
+                            if (rawUrl.startsWith('//')) {
+                                rawUrl = 'https:' + rawUrl;
+                            }
+                            // Attempt to get a larger image if a pattern like /150 or /180 is at the end
+                            let largeUrl = rawUrl.replace(/\/(150|180|90|100|120)$/, '/600');
+                            if (!qidianCoverResults.includes(largeUrl)) { // Avoid duplicates if regex isn't perfect
+                                qidianCoverResults.push(largeUrl);
+                            }
+                        }
+                    });
+
+                    log(`Found ${qidianCoverResults.length} potential cover(s). URLs: ${qidianCoverResults.join(', ')}`);
+
+                    if (qidianCoverResults.length > 0) {
+                        currentQidianCoverIndex = 0;
+                        displayCurrentQidianCover();
+                    } else {
+                        throw new Error('No cover images found in search results.');
+                    }
+
                 } catch (error) {
-                    log(`Qidian cover search error: ${error.message}`, 'error'); coverDataUrl = null;
+                    log(`Qidian cover search error: ${error.message}`, 'error'); 
+                    coverDataUrl = null; 
+                    qidianCoverResults = []; currentQidianCoverIndex = 0;
                     const errorPlaceholder = 'https://placehold.co/150x225/ef476f/ffffff?text=Error';
                     if (coverPreview) { coverPreview.src = errorPlaceholder; coverPreview.style.display = 'block'; }
                 } finally {
-                    isSearchingCover = false; if (convertBtn) convertBtn.disabled = false; updateSummary();
+                    isSearchingCover = false; 
+                    if (convertBtn) convertBtn.disabled = !selectedFile; // Only enable if a file is selected
+                    updateCoverNavigation();
+                    updateSummary();
                 }
             }
+
+            function displayCurrentQidianCover() {
+                if (qidianCoverResults.length > 0 && coverSearch.checked) {
+                    coverDataUrl = qidianCoverResults[currentQidianCoverIndex];
+                    if (coverPreview) {
+                        coverPreview.src = ''; // Clear src first to ensure onload fires for same URL if re-selected
+                        coverPreview.src = coverDataUrl;
+                        coverPreview.style.display = 'block';
+
+                        // Add error handling for individual image load
+                        coverPreview.onerror = () => {
+                            log(`Failed to load image: ${coverDataUrl}`, 'error');
+                            coverPreview.src = 'https://placehold.co/150x225/f0f0f0/cc0000?text=Load+Error'; // Show load error
+                            // Optionally, try to remove this image from results and move to next
+                            // qidianCoverResults.splice(currentQidianCoverIndex, 1);
+                            // if (currentQidianCoverIndex >= qidianCoverResults.length) currentQidianCoverIndex = 0;
+                            // if (qidianCoverResults.length > 0) displayCurrentQidianCover(); else updateCoverNavigation();
+                        };
+                    }
+                    log(`Displaying Qidian cover ${currentQidianCoverIndex + 1} of ${qidianCoverResults.length}: ${coverDataUrl}`);
+                } else if (!coverUpload.checked || !coverFile) { // If not Qidian and no local upload
+                    coverDataUrl = null;
+                    if (coverPreview) {
+                        coverPreview.src = '';
+                        coverPreview.style.display = 'none';
+                    }
+                }
+                // If coverUpload is checked and coverFile exists, coverDataUrl is already set by handleCoverSelect
+                updateCoverNavigation();
+                updateSummary();
+            }
+
+            function navigateQidianCovers(direction) {
+                if (!coverSearch.checked || qidianCoverResults.length === 0) return;
+
+                currentQidianCoverIndex += direction;
+
+                if (currentQidianCoverIndex < 0) {
+                    currentQidianCoverIndex = qidianCoverResults.length - 1;
+                } else if (currentQidianCoverIndex >= qidianCoverResults.length) {
+                    currentQidianCoverIndex = 0;
+                }
+                displayCurrentQidianCover();
+            }
+
+            function updateCoverNavigation() {
+                if (coverSearch.checked && qidianCoverResults.length > 0) {
+                    if (coverNavigationControls) coverNavigationControls.style.display = 'flex';
+                    if (coverIndicator) coverIndicator.textContent = `${currentQidianCoverIndex + 1} / ${qidianCoverResults.length}`;
+                    if (prevCoverBtn) prevCoverBtn.disabled = qidianCoverResults.length <= 1;
+                    if (nextCoverBtn) nextCoverBtn.disabled = qidianCoverResults.length <= 1;
+                } else {
+                    if (coverNavigationControls) coverNavigationControls.style.display = 'none';
+                }
+            }
+
+
             function checkImageExists(url) { 
                  return new Promise((resolve, reject) => {
                     const img = new Image();
@@ -1356,33 +1606,39 @@
             function updateSummary() {
                 if (summaryTitle) summaryTitle.textContent = bookTitle?.value || '未设置';
                 if (summaryAuthor) summaryAuthor.textContent = bookAuthor?.value || '未设置';
-                let coverSourceText = '无封面';
-                if (coverUpload?.checked) coverSourceText = '本地上传'; else if (coverSearch?.checked) coverSourceText = '起点网';
-                if (summaryCover) summaryCover.textContent = coverSourceText;
-                const summaryImg = document.getElementById('summaryCoverPreview');
-                const summaryPlaceholder = document.getElementById('summaryCoverPlaceholder');
-                if (summaryImg && summaryPlaceholder) {
-                    let currentCoverSrc = null;
+                
+                let coverSourceTextVal = '无封面';
+                if (coverUpload?.checked && coverFile) coverSourceTextVal = '本地上传'; 
+                else if (coverSearch?.checked) coverSourceTextVal = '起点网';
+                if (summaryCoverSourceText) summaryCoverSourceText.textContent = coverSourceTextVal;
+                
+                if (summaryCoverPreview && summaryCoverPlaceholder) {
+                    let currentDisplaySrc = null;
+
                     if (coverUpload?.checked && coverFile && coverDataUrl?.startsWith('data:')) {
-                         currentCoverSrc = coverDataUrl;
-                    } else if (coverSearch?.checked && coverDataUrl) {
-                         currentCoverSrc = coverDataUrl;
+                         currentDisplaySrc = coverDataUrl;
+                    } else if (coverSearch?.checked && qidianCoverResults.length > 0) {
+                         currentDisplaySrc = qidianCoverResults[currentQidianCoverIndex];
+                    } else if (coverSearch?.checked && coverDataUrl && !coverDataUrl.includes('placehold.co') && qidianCoverResults.length === 0) {
+                        // This case handles if a single coverDataUrl was set before multiple results logic
+                        currentDisplaySrc = coverDataUrl;
                     }
 
-                    if (currentCoverSrc) {
-                        summaryImg.src = currentCoverSrc;
-                        summaryImg.style.display = 'block';
-                        summaryPlaceholder.style.display = 'none';
-                        if (isSearchingCover && currentCoverSrc.includes('placehold.co')) {
-                             summaryPlaceholder.textContent = '搜索中...';
-                             summaryPlaceholder.style.display = 'block';
-                             summaryImg.style.display = 'none';
-                        }
-                    } else {
-                        summaryImg.src = '';
-                        summaryImg.style.display = 'none';
-                        summaryPlaceholder.textContent = (coverNone?.checked) ? '无封面' : '等待封面...';
-                        summaryPlaceholder.style.display = 'block';
+
+                    if (currentDisplaySrc && !currentDisplaySrc.includes('placehold.co')) {
+                        summaryCoverPreview.src = currentDisplaySrc;
+                        summaryCoverPreview.style.display = 'block';
+                        summaryCoverPlaceholder.style.display = 'none';
+                    } else if (isSearchingCover && coverSearch?.checked) {
+                        summaryCoverPreview.src = 'https://placehold.co/150x225/e9ecef/6c757d?text=Searching...';
+                        summaryCoverPreview.style.display = 'block'; // Show searching placeholder
+                        summaryCoverPlaceholder.style.display = 'none';
+                    }
+                     else {
+                        summaryCoverPreview.src = '';
+                        summaryCoverPreview.style.display = 'none';
+                        summaryCoverPlaceholder.textContent = (coverNone?.checked) ? '无封面' : '等待封面...';
+                        summaryCoverPlaceholder.style.display = 'block';
                     }
                 }
             }
@@ -1412,12 +1668,22 @@
                     let text; if (!fileArrayBuffer && selectedFile) { log('File ArrayBuffer not found, reading file again.', 'warning'); fileArrayBuffer = await readFileAsArrayBuffer(selectedFile); } if (!fileArrayBuffer) throw new Error("无法读取文件内容。");
                     text = await decodeText(fileArrayBuffer, detectedEncoding || 'UTF-8'); text = cleanText(text); log(`Text cleaned. Length: ${text.length} characters`);
                     processedText = processText(text, options); log(`Text processed. Found ${countSections(processedText)} sections`);
+                    
                     let finalCoverDataUrl = null;
-                    if (coverUpload?.checked && coverFile) { finalCoverDataUrl = await readFileAsDataURL(coverFile); }
-                    else if (coverSearch?.checked && coverDataUrl) {
+                    if (coverUpload?.checked && coverFile) { 
+                        finalCoverDataUrl = await readFileAsDataURL(coverFile); 
+                    } else if (coverSearch?.checked && qidianCoverResults.length > 0) {
+                        const selectedQidianUrl = qidianCoverResults[currentQidianCoverIndex];
+                        if (selectedQidianUrl) {
+                            if (selectedQidianUrl.startsWith('http')) finalCoverDataUrl = await fetchImageAsDataURL(selectedQidianUrl);
+                            else if (selectedQidianUrl.startsWith('data:')) finalCoverDataUrl = selectedQidianUrl; // Should not happen for Qidian
+                        }
+                    } else if (coverSearch?.checked && coverDataUrl && !coverDataUrl.includes('placehold.co')) {
+                         // Fallback for single coverDataUrl if qidianCoverResults is empty but a valid URL exists
                          if (coverDataUrl.startsWith('http')) finalCoverDataUrl = await fetchImageAsDataURL(coverDataUrl);
                          else if (coverDataUrl.startsWith('data:')) finalCoverDataUrl = coverDataUrl;
                     }
+
                     if (typeof JSZip === 'undefined') throw new Error('JSZip library not found.');
                     epubBlob = await generateEpub(processedText, finalCoverDataUrl, options); log(`EPUB created successfully. Size: ${formatFileSize(epubBlob.size)}`, 'success');
                     clearInterval(progressInterval); if (progressBar) progressBar.style.width = '100%'; if (progressStatus) progressStatus.textContent = '转换完成！';
@@ -1428,9 +1694,12 @@
             }
             function resetConverter() { 
                  if (uploadCard) uploadCard.style.display = 'block'; if (dropArea) dropArea.style.display = 'block'; if (fileInfo) fileInfo.style.display = 'none'; if (progressCard) progressCard.style.display = 'none'; if (resultCard) resultCard.style.display = 'none'; if (progressBar) progressBar.style.width = '0%'; if (progressStatus) progressStatus.textContent = '';
-                 updateDebugArea(); removeFile();
+                 updateDebugArea(); removeFile(); // This already clears coverFile, coverDataUrl, qidianResults
                  if (chapterPattern && customChapterPattern) { chapterPattern.value = 'auto'; customChapterPattern.value = ''; if (customChapterArea) customChapterArea.style.display = 'none'; } if (volumePattern && customVolumePattern) { volumePattern.value = 'auto'; customVolumePattern.value = ''; if (customVolumeArea) customVolumeArea.style.display = 'none'; }
-                 if (coverSearch) coverSearch.checked = true; toggleCoverOptions(); epubBlob = null; if (convertBtn) convertBtn.disabled = false; log('Converter reset to initial state', 'info');
+                 if (coverSearch) coverSearch.checked = true; 
+                 toggleCoverOptions(); // This will re-evaluate display of nav etc.
+                 epubBlob = null; if (convertBtn) convertBtn.disabled = false; 
+                 log('Converter reset to initial state', 'info');
             }
             function downloadEpub() { 
                  if (!epubBlob) { log('Download error: No EPUB file generated', 'error'); alert('错误：没有生成 EPUB 文件'); return; } const title = bookTitle?.value || 'Untitled_Book'; const filename = `${sanitizeFilename(title)}.epub`; if (typeof saveAs === 'undefined') { log('FileSaver.js not found, using fallback download method', 'warning'); const url = URL.createObjectURL(epubBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); } else { saveAs(epubBlob, filename); } log(`EPUB downloaded as: ${filename}`, 'success');
@@ -1492,7 +1761,7 @@
                             log(`Invalid cover image data URL format: ${coverImageDataUrl.substring(0,100)}... Skipping cover.`, 'warning');
                         }
                     } else if (coverImageDataUrl) {
-                        log(`Cover image data is not a Data URL. Skipping cover. URL: ${coverImageDataUrl.substring(0,100)}`, 'warning');
+                        log(`Cover image data is not a Data URL (possibly due to fetch error). Skipping cover. URL: ${coverImageDataUrl.substring(0,100)}`, 'warning');
                     }
                     oebps.file('title.xhtml', `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(options.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body class="title-page"><div id="title_page_main" class="book-title">${escapeXML(options.title)}</div><div class="author">${escapeXML(options.author)}</div></body></html>`); 
                     if (coverImagePath) {
