@@ -1159,6 +1159,15 @@
                                 <option value="on">开启</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label for="googleBooksApiKeyInput">Google Books API Key (可选)</label>
+                            <input type="text" id="googleBooksApiKeyInput" class="form-control" placeholder="输入您的Google Books API Key">
+                            <p style="font-size: 0.8rem; color: var(--memphis-dark); margin-top: 8px; line-height: 1.4;">
+                                此API Key用于从 Google Books 获取封面。您可以在
+                                <a href="https://console.cloud.google.com/apis/dashboard" target="_blank" rel="noopener noreferrer" style="color: var(--memphis-primary); text-decoration: underline;">Google Cloud Console</a>
+                                创建和管理您的API Key。如果留空，Google Books封面搜索将不可用。
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1332,6 +1341,9 @@
             const downloadBtn = document.getElementById('downloadBtn');
             const convertNewBtn = document.getElementById('convertNewBtn');
 
+            // 在获取其他 DOM 元素的地方添加：
+            const googleBooksApiKeyInput = document.getElementById('googleBooksApiKeyInput');
+
             // State Variables
             let selectedFile = null;
             let coverFile = null;
@@ -1373,6 +1385,7 @@
                     paragraphSpacing: paragraphSpacing?.value,
 
                     debugMode: debugMode?.value,
+                    googleBooksApiKey: googleBooksApiKeyInput?.value // 仅在输入框存在时保存
                 };
 
                 try {
@@ -1434,6 +1447,7 @@
 
                     // 应用调试设置
                     if (settings.debugMode && debugMode) debugMode.value = settings.debugMode;
+                    if (settings.googleBooksApiKey && googleBooksApiKeyInput) googleBooksApiKeyInput.value = settings.googleBooksApiKey;
 
                     // !!! 重要：应用设置后，需要手动触发一次依赖这些设置的UI更新函数 !!!
                     // 因为直接修改 .value 不会触发 'change' 事件
@@ -1871,6 +1885,12 @@
                         saveUserSettings(); // 保存用户设置
                     });
                 }
+                if (googleBooksApiKeyInput) {
+                    googleBooksApiKeyInput.addEventListener('input', () => {
+                        saveUserSettings();
+                        updateGoogleBooksOptionStatus(); // 当API Key更改时，也更新选项状态
+                    });
+                }
             }
 
             // 原 searchQidianCover 函数需要重构/替换为此函数
@@ -1998,28 +2018,79 @@
             }
 
             async function fetchGoogleBooksCoversInternal(bookname) {
-                // 替换 YOUR_API_KEY 或处理无Key的情况
-                const apiKey = ""; // 用户需自行配置或应用提供其他方式处理
-                const searchUrl = `https://www.googleapis.com/books/v1/volumes?q=intitle:<span class="math-inline">\{encodeURIComponent\(bookname\)\}</span>{apiKey ? '&key=' + apiKey : ''}&maxResults=10`;
-                log(`Workspaceing from Google Books: ${searchUrl}`);
-                const response = await fetch(searchUrl);
-                if (!response.ok) throw new Error(`Google Books search failed: ${response.statusText}`);
-                const data = await response.json();
-                if (data.items && data.items.length > 0) {
-                    for (const item of data.items) {
-                        if (item.volumeInfo && item.volumeInfo.imageLinks) {
-                            const links = item.volumeInfo.imageLinks;
-                            // 优先顺序: extraLarge, large, medium, small, thumbnail, smallThumbnail
-                            const coverUrl = links.large || links.medium || links.thumbnail || links.smallThumbnail || links.small || links.extraLarge;
-                            if (coverUrl) {
-                                // Google Books API有时返回http链接，最好替换为https
-                                onlineCoverResults.push(coverUrl.replace(/^http:/, 'https:'));
+                const userApiKey = googleBooksApiKeyInput ? googleBooksApiKeyInput.value.trim() : "";
+
+                if (!userApiKey) {
+                    log("Google Books API Key 未在设置中配置。将跳过 Google Books 搜索。", "warning");
+                    // 通知用户API Key缺失，所以Google Books源不可用
+                    // showCustomAlert("Google Books 封面搜索需要您在“调试选项”中配置有效的API Key。", "API Key缺失", "warning");
+                    // 清空可能存在的旧结果，并直接返回
+                    onlineCoverResults = []; // 确保结果数组被清空
+                    // 注意：这里不抛出错误，而是静默失败，searchOnlineCover 会处理无结果的情况
+                    return;
+                }
+
+                const searchUrl = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(bookname)}&key=${userApiKey}&maxResults=10`;
+                log(`Workspaceing from Google Books with user API Key: ${searchUrl}`);
+
+                try {
+                    const response = await fetch(searchUrl);
+                    if (!response.ok) {
+                        // 如果API Key无效或服务有问题，Google API会返回错误
+                        const errorData = await response.json().catch(() => null); // 尝试解析错误详情
+                        let errorMessage = `Google Books API请求失败: ${response.status} ${response.statusText}`;
+                        if (errorData && errorData.error && errorData.error.message) {
+                            errorMessage += `\n详情: ${errorData.error.message}`;
+                            if (errorData.error.errors && errorData.error.errors[0] && errorData.error.errors[0].reason === 'keyInvalid') {
+                                showCustomAlert("您提供的 Google Books API Key 无效或权限不足。请检查您的API Key设置。", "API Key无效", "error");
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    const data = await response.json();
+                    if (data.items && data.items.length > 0) {
+                        for (const item of data.items) {
+                            if (item.volumeInfo && item.volumeInfo.imageLinks) {
+                                const links = item.volumeInfo.imageLinks;
+                                const coverUrl = links.large || links.medium || links.thumbnail || links.smallThumbnail || links.small || links.extraLarge;
+                                if (coverUrl) {
+                                    onlineCoverResults.push(coverUrl.replace(/^http:/, 'https:'));
+                                }
                             }
                         }
                     }
+                    log(`Google Books: Found ${onlineCoverResults.length} potential cover(s).`);
+                } catch (error) {
+                    log(`Error fetching from Google Books: ${error.message}`, 'error');
+                    // 可以在此处决定是否向用户显示一个更通用的错误，因为具体的API Key无效错误已在上面处理
+                    // showCustomAlert(`从Google Books获取封面失败：<br>${error.message}`, "Google Books错误", "error");
+                    onlineCoverResults = []; // 确保出错时清空结果
+                    // 不再向上抛出错误，让 searchOnlineCover 处理空结果的情况
                 }
-                log(`Google Books: Found ${onlineCoverResults.length} potential cover(s).`);
             }
+
+            function updateGoogleBooksOptionStatus() {
+                if (!onlineSourceSelect || !googleBooksApiKeyInput) return;
+
+                const googleBooksOption = onlineSourceSelect.querySelector('option[value="googlebooks"]');
+                if (!googleBooksOption) return; // 如果HTML中没有这个选项，则跳过
+
+                const apiKey = googleBooksApiKeyInput.value.trim();
+
+                if (!apiKey) {
+                    googleBooksOption.textContent = "Google Books (需API Key)";
+                    // 可选：如果当前选中的就是Google Books且没有API Key，可以提示用户或切换到默认源
+                    if (onlineSourceSelect.value === 'googlebooks' && coverSearch.checked) {
+                        // 避免在仅仅加载设置时就弹出alert，这个逻辑可能需要更细致地放在用户尝试搜索时
+                        // log("Google Books selected but no API key.", "warning");
+                    }
+                } else {
+                    googleBooksOption.textContent = "Google Books (已配置Key)"; // 或者只显示 "Google Books"
+                }
+            }
+
+            // 在 initializeApp 末尾，以及 loadUserSettings 末尾调用一次 updateGoogleBooksOptionStatus()
+            // 也在 googleBooksApiKeyInput 的 'input' 事件监听器中调用它。
 
             function displayCurrentOnlineCover() {
                 if (onlineCoverResults.length > 0 && coverSearch.checked) {
@@ -2456,6 +2527,7 @@
                 if (!name) return 'Untitled'; return name.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').replace(/__+/g, '_').replace(/^_+|_+$/g, '');
             }
             loadUserSettings();
+            updateGoogleBooksOptionStatus();
         });
     </script>
 </body>
