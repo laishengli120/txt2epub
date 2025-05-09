@@ -735,6 +735,138 @@
             font-weight: 600;
         }
 
+        /* --- Custom Alert Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(30, 30, 30, 0.7); /* 暗色半透明背景 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* 确保在最上层 */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55), visibility 0s linear 0.3s;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .modal-content.memphis-modal {
+            background-color: var(--memphis-white);
+            padding: 30px; /* 增加内边距 */
+            border-radius: var(--border-radius);
+            border: var(--bold-border);
+            box-shadow: var(--graphic-shadow);
+            width: 90%;
+            max-width: 480px; /* 合适的最大宽度 */
+            text-align: left;
+            transform: translateY(-30px) scale(0.95); /* 出现时有点动态效果 */
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .modal-overlay.visible .modal-content.memphis-modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            border-bottom: 3px dotted var(--memphis-dark); /* 孟菲斯风格虚线 */
+            position: relative;
+        }
+        /* 标题装饰元素 */
+        .modal-header::before {
+            content: '';
+            position: absolute;
+            left: -15px; /* 根据内边距调整 */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 15px;
+            background-color: var(--memphis-secondary); /* 黄色装饰 */
+            border: var(--bold-border);
+            border-radius: 0; /* 方形 */
+        }
+
+
+        .modal-title-text {
+            font-size: 1.3rem; /* 稍大标题 */
+            font-weight: 700;
+            color: var(--memphis-dark); /* 默认深色标题 */
+            margin: 0;
+            text-transform: uppercase; /* 大写标题 */
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: var(--bold-border);
+            color: var(--memphis-dark);
+            font-size: 1.5rem; /* 更清晰的关闭按钮 */
+            font-weight: 700;
+            cursor: pointer;
+            line-height: 1;
+            padding: 2px 8px;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            box-shadow: 3px 3px 0px var(--memphis-dark);
+        }
+        .modal-close-btn:hover {
+            background-color: var(--memphis-primary);
+            color: var(--memphis-white);
+            transform: translateY(-2px) translateX(-2px);
+            box-shadow: 5px 5px 0px var(--memphis-dark);
+        }
+        .modal-close-btn:active {
+            transform: translateY(0) translateX(0);
+            box-shadow: 3px 3px 0px var(--memphis-dark);
+        }
+
+        .modal-body {
+            margin-bottom: 25px;
+            font-size: 1rem;
+            color: var(--memphis-dark);
+            line-height: 1.7; /* 增加行高可读性 */
+        }
+        .modal-body p {
+            text-indent: 0; /* 模态框内段落通常不缩进 */
+            margin: 0;
+        }
+
+        .modal-footer {
+            text-align: right;
+        }
+        .modal-footer .btn { /* 确保按钮样式应用 */
+            min-width: 100px;
+        }
+
+
+        /* 不同类型的模态框 (通过JS添加class来改变颜色) */
+        .memphis-modal.modal-error .modal-header::before { background-color: var(--memphis-primary); }
+        .memphis-modal.modal-error .modal-title-text { color: var(--memphis-primary); }
+        /* .memphis-modal.modal-error { border-color: var(--memphis-primary); } */ /* 可选：改变整个边框颜色 */
+
+        .memphis-modal.modal-warning .modal-header::before { background-color: var(--memphis-secondary); }
+        .memphis-modal.modal-warning .modal-title-text { color: var(--memphis-secondary); }
+        /* .memphis-modal.modal-warning { border-color: var(--memphis-secondary); } */
+
+        .memphis-modal.modal-info .modal-header::before { background-color: var(--memphis-accent1); }
+        .memphis-modal.modal-info .modal-title-text { color: var(--memphis-accent1); }
+        /* .memphis-modal.modal-info { border-color: var(--memphis-accent1); } */
+
+        .memphis-modal.modal-success .modal-header::before { background-color: var(--memphis-accent2); }
+        .memphis-modal.modal-success .modal-title-text { color: var(--memphis-accent2); }
+        /* .memphis-modal.modal-success { border-color: var(--memphis-accent2); } */
+
 
         /* --- Responsive Adjustments --- */
         @media (max-width: 992px) {
@@ -919,8 +1051,7 @@
                             <div class="radio-group">
                                 <div class="radio-option">
                                     <input type="radio" id="coverSearch" name="coverOption" value="search" checked>
-                                    <label for="coverSearch">在线搜索 (起点)</label>
-                                </div>
+                                    <label for="coverSearch">在线搜索</label> </div>
                                 <div class="radio-option">
                                     <input type="radio" id="coverUpload" name="coverOption" value="upload">
                                     <label for="coverUpload">本地上传</label>
@@ -930,6 +1061,15 @@
                                     <label for="coverNone">无封面</label>
                                 </div>
                             </div>
+                        </div>
+                        
+                        <div id="onlineSourceSelectionArea" class="form-group" style="display: none; margin-left: 20px;">
+                            <label for="onlineSourceSelect">选择在线来源:</label>
+                            <select id="onlineSourceSelect" class="form-control">
+                                <option value="qidian" selected>起点小说 (小说类推荐)</option>
+                                <option value="openlibrary">Open Library (综合/外文)</option>
+                                <option value="googlebooks">Google Books (综合/需API Key)</option>
+                                </select>
                         </div>
                         
                         <div id="coverUploadArea" style="display: none;">
@@ -1106,6 +1246,20 @@
             </div>
         </div>
     </div>
+    <div id="customAlertModal" class="modal-overlay">
+        <div class="modal-content memphis-modal">
+            <div class="modal-header">
+                <h4 id="customAlertTitle" class="modal-title-text">提示</h4>
+                <button id="customAlertCloseBtn" class="modal-close-btn" title="关闭">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="customAlertMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="customAlertOkBtn" class="btn btn-primary">确定</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1139,6 +1293,8 @@
             const coverUpload = document.getElementById('coverUpload');
             const coverSearch = document.getElementById('coverSearch');
             const coverNone = document.getElementById('coverNone');
+            const onlineSourceSelectionArea = document.getElementById('onlineSourceSelectionArea');
+            const onlineSourceSelect = document.getElementById('onlineSourceSelect');
             const coverUploadArea = document.getElementById('coverUploadArea');
             const coverPreviewArea = document.getElementById('coverPreviewArea');
             const coverPreview = document.getElementById('coverPreview');
@@ -1185,8 +1341,217 @@
             let fileArrayBuffer = null;
             let processedText = null;
             let isSearchingCover = false;
-            let qidianCoverResults = [];
-            let currentQidianCoverIndex = 0;
+            let onlineCoverResults = [];
+            let currentOnlineCoverIndex = 0;
+            // 在脚本的全局作用域或主函数作用域顶部定义
+            const USER_SETTINGS_KEY = 'epubConverterUserSettings_v1'; // v1用于未来可能的结构升级
+
+            // 确保在能访问到所有相关DOM元素引用的作用域内定义此函数
+            function saveUserSettings() {
+                if (typeof(Storage) === "undefined") {
+                    log("浏览器不支持 localStorage，无法保存用户设置。", "warning");
+                    showCustomAlert("浏览器不支持 localStorage，无法保存用户设置。但不会影响使用！");
+                    return;
+                }
+
+                const settings = {
+                    chapterPattern: chapterPattern?.value,
+                    customChapterPattern: customChapterPattern?.value, // 始终保存，加载时根据chapterPattern决定是否应用
+                    volumePattern: volumePattern?.value,
+                    customVolumePattern: customVolumePattern?.value,   // 始终保存
+                    maxTitleLength: maxTitleLength?.value,
+                    unknownTitleName: unknownTitleName?.value,
+
+                    coverOption: document.querySelector('input[name="coverOption"]:checked')?.value,
+                    onlineSource: typeof onlineSourceSelect !== 'undefined' ? onlineSourceSelect?.value : 'qidian', // 默认qidian
+
+                    indent: indent?.value,
+                    titleAlign: titleAlign?.value,
+                    fontFamily: fontFamily?.value,
+                    fontSize: fontSize?.value,
+                    lineHeight: lineHeight?.value,
+                    paragraphSpacing: paragraphSpacing?.value,
+
+                    debugMode: debugMode?.value,
+                };
+
+                try {
+                    localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(settings));
+                    log('用户偏好设置已保存。', 'info');
+                } catch (e) {
+                    log(`保存用户设置到 localStorage 失败: ${e.message}`, 'error');
+                    // 可以考虑如果存储已满，提示用户
+                }
+            }
+
+            function loadUserSettings() {
+                if (typeof(Storage) === "undefined") {
+                    log("浏览器不支持 localStorage，无法加载用户设置。", "warning");
+                    return;
+                }
+
+                try {
+                    const savedSettingsString = localStorage.getItem(USER_SETTINGS_KEY);
+                    if (!savedSettingsString) {
+                        log('未找到已保存的用户设置。', 'info');
+                        // 可在此处设置应用的默认值，如果它们与HTML中的默认值不同
+                        // 例如: chapterPattern.value = 'auto'; toggleCoverOptions(); ...
+                        return;
+                    }
+
+                    const settings = JSON.parse(savedSettingsString);
+                    if (!settings) {
+                        log('解析已保存的用户设置失败。', 'warning');
+                        return;
+                    }
+
+                    log('正在加载用户偏好设置...', 'info');
+
+                    // 应用章节设置
+                    if (settings.chapterPattern && chapterPattern) chapterPattern.value = settings.chapterPattern;
+                    if (settings.customChapterPattern && customChapterPattern) customChapterPattern.value = settings.customChapterPattern;
+                    if (settings.volumePattern && volumePattern) volumePattern.value = settings.volumePattern;
+                    if (settings.customVolumePattern && customVolumePattern) customVolumePattern.value = settings.customVolumePattern;
+                    if (settings.maxTitleLength && maxTitleLength) maxTitleLength.value = settings.maxTitleLength;
+                    if (settings.unknownTitleName && unknownTitleName) unknownTitleName.value = settings.unknownTitleName;
+
+                    // 应用封面设置
+                    if (settings.coverOption) {
+                        const coverRadioToSelect = document.querySelector(`input[name="coverOption"][value="${settings.coverOption}"]`);
+                        if (coverRadioToSelect) coverRadioToSelect.checked = true;
+                    }
+                    if (settings.onlineSource && typeof onlineSourceSelect !== 'undefined' && onlineSourceSelect) {
+                        onlineSourceSelect.value = settings.onlineSource;
+                    }
+
+                    // 应用外观设置
+                    if (settings.indent && indent) indent.value = settings.indent;
+                    if (settings.titleAlign && titleAlign) titleAlign.value = settings.titleAlign;
+                    if (settings.fontFamily && fontFamily) fontFamily.value = settings.fontFamily;
+                    if (settings.fontSize && fontSize) fontSize.value = settings.fontSize;
+                    if (settings.lineHeight && lineHeight) lineHeight.value = settings.lineHeight;
+                    if (settings.paragraphSpacing && paragraphSpacing) paragraphSpacing.value = settings.paragraphSpacing;
+
+                    // 应用调试设置
+                    if (settings.debugMode && debugMode) debugMode.value = settings.debugMode;
+
+                    // !!! 重要：应用设置后，需要手动触发一次依赖这些设置的UI更新函数 !!!
+                    // 因为直接修改 .value 不会触发 'change' 事件
+
+                    // 更新自定义正则区域的显示状态
+                    if (chapterPattern && customChapterArea) {
+                        customChapterArea.style.display = chapterPattern.value === 'custom' ? 'block' : 'none';
+                    }
+                    if (volumePattern && customVolumeArea) {
+                        customVolumeArea.style.display = volumePattern.value === 'custom' ? 'block' : 'none';
+                    }
+
+                    toggleCoverOptions(); // 更新封面选项相关的UI（包括在线来源选择区的显示）
+                    updateDebugArea();    // 根据加载的debugMode更新调试区域显示
+                    // updateSummary(); // 概要信息主要依赖书名/作者/文件，这些不保存，所以此处可能不需要，除非概要中有其他受这些设置影响的项
+
+                    log('用户偏好设置已加载并应用。', 'info');
+
+                } catch (e) {
+                    log(`从 localStorage 加载用户设置失败: ${e.message}`, 'error');
+                    // 可选：如果解析失败或数据损坏，清除损坏的设置
+                    // localStorage.removeItem(USER_SETTINGS_KEY);
+                }
+            }
+
+            // --- Custom Alert Modal Logic ---
+            const customAlertModal = document.getElementById('customAlertModal');
+            const customAlertTitle = document.getElementById('customAlertTitle');
+            const customAlertMessage = document.getElementById('customAlertMessage');
+            const customAlertCloseBtn = document.getElementById('customAlertCloseBtn');
+            const customAlertOkBtn = document.getElementById('customAlertOkBtn');
+            const modalContentElement = customAlertModal ? customAlertModal.querySelector('.modal-content') : null;
+
+            let onCustomAlertCloseCallback = null; // 用于处理关闭后的回调
+
+            /**
+             * 显示自定义模态框提示
+             * @param {string} message - 要显示的消息内容
+             * @param {string} [title="提示"] - 模态框标题
+             * @param {string} [type="info"] - 模态框类型 ('info', 'error', 'warning', 'success')
+             * @param {function} [onClose] - 模态框关闭时的回调函数
+             */
+            function showCustomAlert(message, title = "提示", type = "info", onClose = null) {
+                if (!customAlertModal || !modalContentElement) {
+                    // 如果模态框DOM不存在，则回退到原生alert
+                    console.warn("Custom alert modal DOM not found. Falling back to native alert.");
+                    alert(`${title}: ${message}`);
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    }
+                    return;
+                }
+
+                customAlertTitle.textContent = title;
+                customAlertMessage.innerHTML = message; // 使用 innerHTML 以支持简单的HTML标签如 <br>
+
+                // 重置类型相关的class
+                modalContentElement.classList.remove('modal-error', 'modal-warning', 'modal-info', 'modal-success');
+
+                // 根据类型应用样式和默认标题
+                switch (type.toLowerCase()) {
+                    case 'error':
+                        modalContentElement.classList.add('modal-error');
+                        customAlertTitle.textContent = title === "提示" ? "发生错误" : title;
+                        break;
+                    case 'warning':
+                        modalContentElement.classList.add('modal-warning');
+                        customAlertTitle.textContent = title === "提示" ? "警告" : title;
+                        break;
+                    case 'success':
+                        modalContentElement.classList.add('modal-success');
+                        customAlertTitle.textContent = title === "提示" ? "操作成功" : title;
+                        break;
+                    case 'info':
+                    default:
+                        modalContentElement.classList.add('modal-info');
+                        // 保持传入的title或默认的“提示”
+                        break;
+                }
+
+                onCustomAlertCloseCallback = onClose; // 保存回调
+
+                customAlertModal.classList.add('visible');
+                customAlertOkBtn.focus(); // 方便键盘操作
+            }
+
+            function hideCustomAlert() {
+                if (!customAlertModal) return;
+                customAlertModal.classList.remove('visible');
+                if (typeof onCustomAlertCloseCallback === 'function') {
+                    onCustomAlertCloseCallback(); // 执行回调
+                    onCustomAlertCloseCallback = null; // 清理回调，防止重复执行
+                }
+            }
+
+            // 为模态框的关闭按钮和确定按钮添加事件监听
+            if (customAlertCloseBtn) {
+                customAlertCloseBtn.addEventListener('click', hideCustomAlert);
+            }
+            if (customAlertOkBtn) {
+                customAlertOkBtn.addEventListener('click', hideCustomAlert);
+            }
+
+            // 点击模态框外部（遮罩层）关闭模态框
+            if (customAlertModal) {
+                customAlertModal.addEventListener('click', (event) => {
+                    if (event.target === customAlertModal) { // 确保是点击遮罩本身，而非内容区域
+                        hideCustomAlert();
+                    }
+                });
+            }
+
+            // (可选) 按下 Escape 键关闭模态框
+            document.addEventListener('keydown', (event) => {
+                if (event.key === "Escape" && customAlertModal && customAlertModal.classList.contains('visible')) {
+                    hideCustomAlert();
+                }
+            });
 
 
             // Initialize
@@ -1262,18 +1627,43 @@
                 handleResize(); 
 
                 if (changeCoverInSummaryBtn) {
-    changeCoverInSummaryBtn.addEventListener('click', (event) => { // 传入 event 对象
-        event.stopPropagation(); // 阻止事件冒泡
-        activateSection('coverSection', document.querySelector('.sidebar-icon[data-section="coverSection"]'));
-        if (window.innerWidth <= 992 && sidebar && !sidebar.classList.contains('sidebar-visible')) {
-            sidebar.classList.add('sidebar-visible');
-        }
-         if (sidebarContent && !sidebarContent.classList.contains('expanded')) {
-            sidebarContent.classList.add('expanded');
-        }
-        updateMainContentMargin();
-    });
-}
+                    changeCoverInSummaryBtn.addEventListener('click', (event) => { // 传入 event 对象
+                        event.stopPropagation(); // 阻止事件冒泡
+                        activateSection('coverSection', document.querySelector('.sidebar-icon[data-section="coverSection"]'));
+                        if (window.innerWidth <= 992 && sidebar && !sidebar.classList.contains('sidebar-visible')) {
+                            sidebar.classList.add('sidebar-visible');
+                        }
+                        if (sidebarContent && !sidebarContent.classList.contains('expanded')) {
+                            sidebarContent.classList.add('expanded');
+                        }
+                        updateMainContentMargin();
+                    });
+                }
+            }
+
+            function toggleCoverOptions() {
+                const coverSearchChecked = coverSearch && coverSearch.checked;
+                const coverUploadChecked = coverUpload && coverUpload.checked;
+
+                if (coverUploadArea) coverUploadArea.style.display = coverUploadChecked ? 'block' : 'none';
+                if (coverPreviewArea) coverPreviewArea.style.display = (coverSearchChecked || coverUploadChecked) ? 'block' : 'none';
+
+                // 新增逻辑: 控制在线来源选择区域的显示
+                if (onlineSourceSelectionArea) {
+                    onlineSourceSelectionArea.style.display = coverSearchChecked ? 'block' : 'none';
+                }
+
+                if (coverNone && coverNone.checked) {
+                    if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; }
+                    coverDataUrl = null;
+                    onlineCoverResults = []; // (假设 qidianCoverResults 已重命名为 onlineCoverResults)
+                    currentOnlineCoverIndex = 0; // (假设 currentOnlineCoverIndex 已重命名)
+                }
+                if (!coverUploadChecked) {
+                    if(coverFileName) { coverFileName.textContent = ''; coverFileName.style.display = 'none'; }
+                }
+                updateCoverNavigation();
+                updateSummary();
             }
 
             function activateSection(sectionId, iconElement) {
@@ -1361,7 +1751,7 @@
                 if (fileInput.files.length > 0) {
                     selectedFile = fileInput.files[0];
                     if (!selectedFile.name.toLowerCase().endsWith('.txt')) {
-                        log('Error: Not a .txt file', 'error'); alert('Please select a valid .txt file'); removeFile(); return;
+                        log('Error: Not a .txt file', 'error'); showCustomAlert('请选择一个有效的 .txt 文件。', '文件类型错误', 'error'); removeFile(); return;
                     }
                     if (txtFileName) txtFileName.textContent = selectedFile.name;
                     if (txtFileSize) txtFileSize.textContent = formatFileSize(selectedFile.size);
@@ -1376,13 +1766,13 @@
                         log(`Detected encoding: ${encodingInfo.encoding} with confidence ${Math.round(encodingInfo.confidence * 100)}%`);
                         extractTitleAuthor(selectedFile.name);
                         updateSummary();
-                        if (coverSearch && coverSearch.checked) searchQidianCover();
+                        if (coverSearch && coverSearch.checked) searchOnlineCover();
                     }).catch(error => {
                         log(`Error detecting encoding: ${error.message}`, 'error');
                         if (txtEncoding) txtEncoding.textContent = '错误';
                         extractTitleAuthor(selectedFile.name);
                         updateSummary();
-                        if (coverSearch && coverSearch.checked) searchQidianCover();
+                        if (coverSearch && coverSearch.checked) searchOnlineCover();
                     });
                 }
             }
@@ -1390,16 +1780,16 @@
                 if (coverInput.files.length > 0) {
                     coverFile = coverInput.files[0];
                     if (!coverFile.type.startsWith('image/')) {
-                        log('Error: Not an image file', 'error'); alert('Please select a valid image file');
+                        log('Error: Not an image file', 'error'); showCustomAlert('请选择一个有效的图片文件。', '文件类型错误', 'error');
                         coverFile = null; coverInput.value = ''; if(coverFileName) coverFileName.textContent = ''; if(coverFileName) coverFileName.style.display = 'none'; if(coverPreview) coverPreview.src = ''; if(coverPreview) coverPreview.style.display = 'none'; 
-                        qidianCoverResults = []; currentQidianCoverIndex = 0; updateCoverNavigation();
+                        onlineCoverResults = []; currentOnlineCoverIndex = 0; updateCoverNavigation();
                         updateSummary(); return;
                     }
                     if(coverFileName) coverFileName.textContent = `已选择: ${coverFile.name}`; if(coverFileName) coverFileName.style.display = 'block';
                     const reader = new FileReader();
                     reader.onload = (e) => { 
                         coverDataUrl = e.target.result; 
-                        qidianCoverResults = []; currentQidianCoverIndex = 0; // Reset Qidian search if local is chosen
+                        onlineCoverResults = []; currentOnlineCoverIndex = 0; // Reset Qidian search if local is chosen
                         updateCoverNavigation(); // Hide Qidian nav
                         if(coverPreview) { coverPreview.src = coverDataUrl; coverPreview.style.display = 'block';} 
                         updateSummary(); 
@@ -1413,7 +1803,7 @@
                 selectedFile = null; fileArrayBuffer = null; processedText = null; epubBlob = null; detectedEncoding = null;
                 if (fileInput) fileInput.value = ''; if (txtPreview) txtPreview.style.display = 'none'; if (fileInfo) fileInfo.style.display = 'none'; if (dropArea) dropArea.style.display = 'block'; if (txtFileName) txtFileName.textContent = ''; if (txtFileSize) txtFileSize.textContent = ''; if (txtEncoding) txtEncoding.textContent = '';
                 coverFile = null; coverDataUrl = null; if (coverInput) coverInput.value = ''; if (coverFileName) { coverFileName.textContent = ''; coverFileName.style.display = 'none'; } if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; }
-                qidianCoverResults = []; currentQidianCoverIndex = 0; updateCoverNavigation();
+                onlineCoverResults = []; currentOnlineCoverIndex = 0; updateCoverNavigation();
                 if (bookTitle) bookTitle.value = ''; if (bookAuthor) bookAuthor.value = '';
                 updateSummary(); log('File and associated data cleared.');
             }
@@ -1424,124 +1814,216 @@
                 coverOptionRadios.forEach(radio => radio.addEventListener('change', () => { 
                     toggleCoverOptions(); 
                     if (selectedFile && coverSearch && coverSearch.checked) {
-                        searchQidianCover(); 
+                        searchOnlineCover(); 
                     } else if (coverSearch && !coverSearch.checked) {
-                        qidianCoverResults = []; // Clear Qidian results if not active
-                        currentQidianCoverIndex = 0;
+                        onlineCoverResults = []; // Clear Qidian results if not active
+                        currentOnlineCoverIndex = 0;
                         if (!coverUpload.checked || !coverFile) { // If not uploading or no file, clear preview
                              coverDataUrl = null;
                         }
                         updateCoverNavigation();
                     }
-                    updateSummary(); 
+                    updateSummary();
+                    saveUserSettings(); // Save the selected cover option 
                 }));
                 if (selectCoverBtn && coverInput) { selectCoverBtn.addEventListener('click', () => coverInput.click()); coverInput.addEventListener('change', handleCoverSelect); }
-                if (chapterPattern && customChapterArea) chapterPattern.addEventListener('change', () => { customChapterArea.style.display = chapterPattern.value === 'custom' ? 'block' : 'none'; updateSummary(); });
-                if (volumePattern && customVolumeArea) volumePattern.addEventListener('change', () => { customVolumeArea.style.display = volumePattern.value === 'custom' ? 'block' : 'none'; updateSummary(); });
                 if (bookTitle) bookTitle.addEventListener('input', updateSummary);
                 if (bookAuthor) bookAuthor.addEventListener('input', updateSummary);
-                if (debugMode) debugMode.addEventListener('change', updateDebugArea);
-                [indent, titleAlign, fontFamily, fontSize, lineHeight, paragraphSpacing].forEach(el => {
-                     if(el) el.addEventListener('change', updateSummary);
+                // 更简洁的方式：将需要监听的元素放入数组统一处理
+                const settingsToTrack = [
+                    // Selects
+                    chapterPattern, volumePattern, titleAlign, fontFamily, fontSize, lineHeight, paragraphSpacing, debugMode,
+                    (typeof onlineSourceSelect !== 'undefined' ? onlineSourceSelect : null), // 条件性添加
+                    // Inputs (text/number)
+                    customChapterPattern, customVolumePattern, maxTitleLength, unknownTitleName, indent
+                ].filter(el => el != null); // 过滤掉可能未定义的元素
+
+                settingsToTrack.forEach(element => {
+                    const eventType = (element.tagName === 'INPUT' && (element.type === 'text' || element.type === 'number')) || element.tagName === 'TEXTAREA'
+                                    ? 'input'
+                                    : 'change';
+                    element.addEventListener(eventType, () => {
+                        // 特定于元素更改的UI更新逻辑 (如果未在其他地方处理)
+                        if (element === chapterPattern && customChapterArea) {
+                            customChapterArea.style.display = element.value === 'custom' ? 'block' : 'none';
+                        }
+                        if (element === volumePattern && customVolumeArea) {
+                            customVolumeArea.style.display = element.value === 'custom' ? 'block' : 'none';
+                        }
+                        if (element === debugMode) {
+                            updateDebugArea();
+                        }
+                        updateSummary(); // 根据需要决定是否在此处统一调用，或在各元素自己的逻辑中调用
+                        saveUserSettings();
+                    });
                 });
 
                 if (prevCoverBtn) prevCoverBtn.addEventListener('click', () => navigateQidianCovers(-1));
                 if (nextCoverBtn) nextCoverBtn.addEventListener('click', () => navigateQidianCovers(1));
+                // 在 setupSettingsEventListeners 函数内
+                if (onlineSourceSelect) {
+                    onlineSourceSelect.addEventListener('change', () => {
+                        // 如果当前封面选项是在线搜索，且有书名，则重新搜索
+                        if (coverSearch.checked && selectedFile && bookTitle.value) {
+                            searchOnlineCover(); // 这是重构后的主要搜索函数
+                        }
+                        updateSummary(); // 更新概要中显示的封面来源文字
+                        saveUserSettings(); // 保存用户设置
+                    });
+                }
             }
 
-            function toggleCoverOptions() {
-                const coverSearchChecked = coverSearch && coverSearch.checked;
-                const coverUploadChecked = coverUpload && coverUpload.checked;
-                if (coverUploadArea) coverUploadArea.style.display = coverUploadChecked ? 'block' : 'none';
-                if (coverPreviewArea) coverPreviewArea.style.display = (coverSearchChecked || coverUploadChecked) ? 'block' : 'none';
-                
-                if (coverNone && coverNone.checked) { 
-                    if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; } 
-                    coverDataUrl = null; 
-                    qidianCoverResults = []; currentQidianCoverIndex = 0;
-                }
-                if (!coverUploadChecked) { // If upload is not checked, clear its specific fields
-                    // coverFile = null; // Keep coverFile if it was uploaded, user might switch back
-                    // if(coverInput) coverInput.value = ''; // Don't clear input, user might switch back
-                    if(coverFileName) { coverFileName.textContent = ''; coverFileName.style.display = 'none'; }
-                }
-                 updateCoverNavigation(); // Always update nav visibility based on current state
-                 updateSummary();
-            }
-
-            async function searchQidianCover() {
+            // 原 searchQidianCover 函数需要重构/替换为此函数
+            async function searchOnlineCover() {
                 if (isSearchingCover) { log('Cover search already in progress.', 'info'); return; }
                 const bookname = bookTitle.value;
-                if (!bookname) { log('Cannot search for cover: No book title provided.', 'warning'); if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; } coverDataUrl = null; qidianCoverResults = []; currentQidianCoverIndex = 0; updateCoverNavigation(); updateSummary(); return; }
-                
-                isSearchingCover = true; if (convertBtn) convertBtn.disabled = true;
+                if (!bookname) {
+                    log('Cannot search for cover: No book title provided.', 'warning');
+                    if (coverPreview) { coverPreview.src = ''; coverPreview.style.display = 'none'; }
+                    coverDataUrl = null;
+                    onlineCoverResults = [];
+                    currentOnlineCoverIndex = 0;
+                    updateCoverNavigation();
+                    updateSummary();
+                    return;
+                }
+
+                isSearchingCover = true;
+                if (convertBtn) convertBtn.disabled = true; // 保持原有逻辑
                 const searchingPlaceholder = 'https://placehold.co/150x225/e9ecef/6c757d?text=Searching...';
                 if (coverPreview) { coverPreview.src = searchingPlaceholder; coverPreview.style.display = 'block'; }
-                qidianCoverResults = []; currentQidianCoverIndex = 0; updateCoverNavigation();
-                updateSummary(); log(`Searching for Qidian cover with query: ${bookname}`);
-                
+
+                onlineCoverResults = []; // 清空之前的任何来源的结果
+                currentOnlineCoverIndex = 0;
+                updateCoverNavigation(); // 先隐藏导航，除非有结果
+                updateSummary(); // 更新概要，可能显示“搜索中”
+
+                const currentSource = onlineSourceSelect.value; // 获取用户选择的来源
+                log(`Searching for cover with query: "${bookname}" using source: ${currentSource}`);
+
                 try {
-                    const corsProxy = 'https://corsproxy.io/?'; 
-                    const targetUrl = encodeURIComponent(`https://m.qidian.com/soushu/${encodeURIComponent(bookname)}.html`); 
-                    const proxyUrl = corsProxy + targetUrl;
-                    log(`Connecting to Qidian search URL: ${proxyUrl}`); // Log proxied URL
-                    
-                    const controller = new AbortController(); 
-                    const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
+                    switch (currentSource) {
+                        case 'qidian':
+                            await fetchQidianCoversInternal(bookname); // 提取出的起点特定逻辑
+                            break;
+                        case 'openlibrary':
+                            await fetchOpenLibraryCoversInternal(bookname); // 新的Open Library逻辑
+                            break;
+                        case 'googlebooks':
+                            await fetchGoogleBooksCoversInternal(bookname); // 新的Google Books逻辑
+                            break;
+                        default:
+                            log(`Unknown online source selected: ${currentSource}`, 'warning');
+                            throw new Error(`未知的在线封面来源: ${currentSource}`);
+                    }
 
-                    const response = await fetch(proxyUrl, { signal: controller.signal }); 
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) throw new Error(`Failed to fetch search results: ${response.status} ${response.statusText}`);
-                    
-                    const htmlContent = await response.text(); 
-                    log('Received Qidian search page.');
-
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(htmlContent, 'text/html');
-                    const imageElements = doc.querySelectorAll('.y-list__item img[data-src]'); // More specific selectors
-                    
-                    qidianCoverResults = [];
-                    imageElements.forEach(img => {
-                        let rawUrl = img.dataset.src || img.getAttribute('data-src');
-                        if (rawUrl) {
-                            if (rawUrl.startsWith('//')) {
-                                rawUrl = 'https:' + rawUrl;
-                            }
-                            // Attempt to get a larger image if a pattern like /150 or /180 is at the end
-                            let largeUrl = rawUrl.replace(/\/(150|180|90|100|120)$/, '/600');
-                            if (!qidianCoverResults.includes(largeUrl)) { // Avoid duplicates if regex isn't perfect
-                                qidianCoverResults.push(largeUrl);
-                            }
-                        }
-                    });
-
-                    log(`Found ${qidianCoverResults.length} potential cover(s). URLs: ${qidianCoverResults.join(', ')}`);
-
-                    if (qidianCoverResults.length > 0) {
-                        currentQidianCoverIndex = 0;
-                        displayCurrentQidianCover();
+                    if (onlineCoverResults.length > 0) {
+                        displayCurrentOnlineCover(); // 重命名的显示函数
                     } else {
-                        throw new Error('No cover images found in search results.');
+                        log('No cover images found from selected source.', 'info');
+                        const noResultsPlaceholder = `https://placehold.co/150x225/e9ecef/6c757d?text=No+Results+from+${currentSource.charAt(0).toUpperCase() + currentSource.slice(1)}`;
+                        if (coverPreview) { coverPreview.src = noResultsPlaceholder; coverPreview.style.display = 'block'; }
+                        coverDataUrl = null; // 确保没有旧的 coverDataUrl 残留
                     }
 
                 } catch (error) {
-                    log(`Qidian cover search error: ${error.message}`, 'error'); 
-                    coverDataUrl = null; 
-                    qidianCoverResults = []; currentQidianCoverIndex = 0;
-                    const errorPlaceholder = 'https://placehold.co/150x225/ef476f/ffffff?text=Error';
+                    log(`Online cover search error (${currentSource}): ${error.message}`, 'error');
+                    coverDataUrl = null;
+                    const errorPlaceholder = `https://placehold.co/150x225/ef476f/ffffff?text=Error+(${currentSource.charAt(0).toUpperCase() + currentSource.slice(1)})`;
                     if (coverPreview) { coverPreview.src = errorPlaceholder; coverPreview.style.display = 'block'; }
                 } finally {
-                    isSearchingCover = false; 
-                    if (convertBtn) convertBtn.disabled = !selectedFile; // Only enable if a file is selected
-                    updateCoverNavigation();
+                    isSearchingCover = false;
+                    if (convertBtn) convertBtn.disabled = !selectedFile; // 保持原有逻辑
+                    updateCoverNavigation(); // 根据是否有结果更新导航按钮
                     updateSummary();
                 }
             }
 
-            function displayCurrentQidianCover() {
-                if (qidianCoverResults.length > 0 && coverSearch.checked) {
-                    coverDataUrl = qidianCoverResults[currentQidianCoverIndex];
+            async function fetchQidianCoversInternal(bookname) {
+                const corsProxy = 'https://corsproxy.io/?'; 
+                const targetUrl = encodeURIComponent(`https://m.qidian.com/soushu/${encodeURIComponent(bookname)}.html`); 
+                const proxyUrl = corsProxy + targetUrl;
+                log(`Connecting to Qidian search URL: ${proxyUrl}`); // Log proxied URL
+                
+                const controller = new AbortController(); 
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
+
+                const response = await fetch(proxyUrl, { signal: controller.signal }); 
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) throw new Error(`Failed to fetch search results: ${response.status} ${response.statusText}`);
+                
+                const htmlContent = await response.text(); 
+                log('Received Qidian search page.');
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlContent, 'text/html');
+                const imageElements = doc.querySelectorAll('.y-list__item img[data-src]'); // More specific selectors
+                
+                onlineCoverResults = [];
+                imageElements.forEach(img => {
+                    let rawUrl = img.dataset.src || img.getAttribute('data-src');
+                    if (rawUrl) {
+                        if (rawUrl.startsWith('//')) {
+                            rawUrl = 'https:' + rawUrl;
+                        }
+                        // Attempt to get a larger image if a pattern like /150 or /180 is at the end
+                        let largeUrl = rawUrl.replace(/\/(150|180|90|100|120)$/, '/600');
+                        if (!onlineCoverResults.includes(largeUrl)) { // Avoid duplicates if regex isn't perfect
+                            onlineCoverResults.push(largeUrl);
+                        }
+                    }
+                });
+            }
+
+            async function fetchOpenLibraryCoversInternal(bookname) {
+                const searchUrl = `https://openlibrary.org/search.json?q=${encodeURIComponent(bookname)}&fields=key,title,author_name,cover_i,isbn&limit=10`; // 限制结果数量
+                log(`Workspaceing from Open Library: ${searchUrl}`);
+                const response = await fetch(searchUrl);
+                if (!response.ok) throw new Error(`Open Library search failed: ${response.statusText}`);
+                const data = await response.json();
+                if (data.docs && data.docs.length > 0) {
+                    for (const doc of data.docs) {
+                        if (doc.cover_i) {
+                            onlineCoverResults.push(`https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`);
+                        } else if (doc.isbn && doc.isbn.length > 0) {
+                            // Try with first ISBN that might have a cover
+                            onlineCoverResults.push(`https://covers.openlibrary.org/b/isbn/${doc.isbn[0]}-L.jpg`);
+                        }
+                    }
+                }
+                // 过滤掉可能无效的URL或添加错误处理以验证图片是否存在
+                // (可选: 使用 checkImageExists 或类似的逻辑来验证图片URL是否真的有效)
+                log(`Open Library: Found ${onlineCoverResults.length} potential cover(s).`);
+            }
+
+            async function fetchGoogleBooksCoversInternal(bookname) {
+                // 替换 YOUR_API_KEY 或处理无Key的情况
+                const apiKey = ""; // 用户需自行配置或应用提供其他方式处理
+                const searchUrl = `https://www.googleapis.com/books/v1/volumes?q=intitle:<span class="math-inline">\{encodeURIComponent\(bookname\)\}</span>{apiKey ? '&key=' + apiKey : ''}&maxResults=10`;
+                log(`Workspaceing from Google Books: ${searchUrl}`);
+                const response = await fetch(searchUrl);
+                if (!response.ok) throw new Error(`Google Books search failed: ${response.statusText}`);
+                const data = await response.json();
+                if (data.items && data.items.length > 0) {
+                    for (const item of data.items) {
+                        if (item.volumeInfo && item.volumeInfo.imageLinks) {
+                            const links = item.volumeInfo.imageLinks;
+                            // 优先顺序: extraLarge, large, medium, small, thumbnail, smallThumbnail
+                            const coverUrl = links.large || links.medium || links.thumbnail || links.smallThumbnail || links.small || links.extraLarge;
+                            if (coverUrl) {
+                                // Google Books API有时返回http链接，最好替换为https
+                                onlineCoverResults.push(coverUrl.replace(/^http:/, 'https:'));
+                            }
+                        }
+                    }
+                }
+                log(`Google Books: Found ${onlineCoverResults.length} potential cover(s).`);
+            }
+
+            function displayCurrentOnlineCover() {
+                if (onlineCoverResults.length > 0 && coverSearch.checked) {
+                    coverDataUrl = onlineCoverResults[currentOnlineCoverIndex];
                     if (coverPreview) {
                         coverPreview.src = ''; // Clear src first to ensure onload fires for same URL if re-selected
                         coverPreview.src = coverDataUrl;
@@ -1552,12 +2034,12 @@
                             log(`Failed to load image: ${coverDataUrl}`, 'error');
                             coverPreview.src = 'https://placehold.co/150x225/f0f0f0/cc0000?text=Load+Error'; // Show load error
                             // Optionally, try to remove this image from results and move to next
-                            // qidianCoverResults.splice(currentQidianCoverIndex, 1);
-                            // if (currentQidianCoverIndex >= qidianCoverResults.length) currentQidianCoverIndex = 0;
-                            // if (qidianCoverResults.length > 0) displayCurrentQidianCover(); else updateCoverNavigation();
+                            // onlineCoverResults.splice(currentOnlineCoverIndex, 1);
+                            // if (currentOnlineCoverIndex >= onlineCoverResults.length) currentOnlineCoverIndex = 0;
+                            // if (onlineCoverResults.length > 0) displayCurrentOnlineCover(); else updateCoverNavigation();
                         };
                     }
-                    log(`Displaying Qidian cover ${currentQidianCoverIndex + 1} of ${qidianCoverResults.length}: ${coverDataUrl}`);
+                    log(`Displaying ${onlineSourceSelect.options[onlineSourceSelect.selectedIndex].text.split(' (')[0]} cover ${currentOnlineCoverIndex + 1} of ${onlineCoverResults.length}: ${coverDataUrl}`);
                 } else if (!coverUpload.checked || !coverFile) { // If not Qidian and no local upload
                     coverDataUrl = null;
                     if (coverPreview) {
@@ -1571,24 +2053,24 @@
             }
 
             function navigateQidianCovers(direction) {
-                if (!coverSearch.checked || qidianCoverResults.length === 0) return;
+                if (!coverSearch.checked || onlineCoverResults.length === 0) return;
 
-                currentQidianCoverIndex += direction;
+                currentOnlineCoverIndex += direction;
 
-                if (currentQidianCoverIndex < 0) {
-                    currentQidianCoverIndex = qidianCoverResults.length - 1;
-                } else if (currentQidianCoverIndex >= qidianCoverResults.length) {
-                    currentQidianCoverIndex = 0;
+                if (currentOnlineCoverIndex < 0) {
+                    currentOnlineCoverIndex = onlineCoverResults.length - 1;
+                } else if (currentOnlineCoverIndex >= onlineCoverResults.length) {
+                    currentOnlineCoverIndex = 0;
                 }
-                displayCurrentQidianCover();
+                displayCurrentOnlineCover();
             }
 
             function updateCoverNavigation() {
-                if (coverSearch.checked && qidianCoverResults.length > 0) {
+                if (coverSearch.checked && onlineCoverResults.length > 0) {
                     if (coverNavigationControls) coverNavigationControls.style.display = 'flex';
-                    if (coverIndicator) coverIndicator.textContent = `${currentQidianCoverIndex + 1} / ${qidianCoverResults.length}`;
-                    if (prevCoverBtn) prevCoverBtn.disabled = qidianCoverResults.length <= 1;
-                    if (nextCoverBtn) nextCoverBtn.disabled = qidianCoverResults.length <= 1;
+                    if (coverIndicator) coverIndicator.textContent = `${currentOnlineCoverIndex + 1} / ${onlineCoverResults.length}`;
+                    if (prevCoverBtn) prevCoverBtn.disabled = onlineCoverResults.length <= 1;
+                    if (nextCoverBtn) nextCoverBtn.disabled = onlineCoverResults.length <= 1;
                 } else {
                     if (coverNavigationControls) coverNavigationControls.style.display = 'none';
                 }
@@ -1608,18 +2090,22 @@
                 if (summaryAuthor) summaryAuthor.textContent = bookAuthor?.value || '未设置';
                 
                 let coverSourceTextVal = '无封面';
-                if (coverUpload?.checked && coverFile) coverSourceTextVal = '本地上传'; 
-                else if (coverSearch?.checked) coverSourceTextVal = '起点网';
+                if (coverUpload?.checked && coverFile) {
+                    coverSourceTextVal = '本地上传';
+                } else if (coverSearch?.checked) {
+                    // 获取当前选中的在线来源的显示文本
+                    const selectedOption = onlineSourceSelect.options[onlineSourceSelect.selectedIndex];
+                    coverSourceTextVal = selectedOption ? selectedOption.text.split(' (')[0] : '在线搜索'; // 例如 "起点小说" 或 "Open Library"
+                }
                 if (summaryCoverSourceText) summaryCoverSourceText.textContent = coverSourceTextVal;
-                
                 if (summaryCoverPreview && summaryCoverPlaceholder) {
                     let currentDisplaySrc = null;
 
                     if (coverUpload?.checked && coverFile && coverDataUrl?.startsWith('data:')) {
                          currentDisplaySrc = coverDataUrl;
-                    } else if (coverSearch?.checked && qidianCoverResults.length > 0) {
-                         currentDisplaySrc = qidianCoverResults[currentQidianCoverIndex];
-                    } else if (coverSearch?.checked && coverDataUrl && !coverDataUrl.includes('placehold.co') && qidianCoverResults.length === 0) {
+                    } else if (coverSearch?.checked && onlineCoverResults.length > 0) {
+                         currentDisplaySrc = onlineCoverResults[currentOnlineCoverIndex];
+                    } else if (coverSearch?.checked && coverDataUrl && !coverDataUrl.includes('placehold.co') && onlineCoverResults.length === 0) {
                         // This case handles if a single coverDataUrl was set before multiple results logic
                         currentDisplaySrc = coverDataUrl;
                     }
@@ -1650,7 +2136,7 @@
                 if (convertNewBtn) convertNewBtn.addEventListener('click', resetConverter);
             }
             async function startConversion() { 
-                if (!selectedFile) { alert('请选择一个 TXT 文件'); return; }
+                if (!selectedFile) { showCustomAlert('请先选择一个 TXT 文件，然后再开始转换。', '操作提示', 'warning'); return; }
                 const title = bookTitle?.value || '未知标题'; const author = bookAuthor?.value || '未知作者'; const language = bookLanguage?.value || 'en';
                 const options = {
                     title, author, language,
@@ -1672,14 +2158,14 @@
                     let finalCoverDataUrl = null;
                     if (coverUpload?.checked && coverFile) { 
                         finalCoverDataUrl = await readFileAsDataURL(coverFile); 
-                    } else if (coverSearch?.checked && qidianCoverResults.length > 0) {
-                        const selectedQidianUrl = qidianCoverResults[currentQidianCoverIndex];
+                    } else if (coverSearch?.checked && onlineCoverResults.length > 0) {
+                        const selectedQidianUrl = onlineCoverResults[currentOnlineCoverIndex];
                         if (selectedQidianUrl) {
                             if (selectedQidianUrl.startsWith('http')) finalCoverDataUrl = await fetchImageAsDataURL(selectedQidianUrl);
                             else if (selectedQidianUrl.startsWith('data:')) finalCoverDataUrl = selectedQidianUrl; // Should not happen for Qidian
                         }
                     } else if (coverSearch?.checked && coverDataUrl && !coverDataUrl.includes('placehold.co')) {
-                         // Fallback for single coverDataUrl if qidianCoverResults is empty but a valid URL exists
+                         // Fallback for single coverDataUrl if onlineCoverResults is empty but a valid URL exists
                          if (coverDataUrl.startsWith('http')) finalCoverDataUrl = await fetchImageAsDataURL(coverDataUrl);
                          else if (coverDataUrl.startsWith('data:')) finalCoverDataUrl = coverDataUrl;
                     }
@@ -1689,7 +2175,13 @@
                     clearInterval(progressInterval); if (progressBar) progressBar.style.width = '100%'; if (progressStatus) progressStatus.textContent = '转换完成！';
                     setTimeout(() => { if (progressCard) progressCard.style.display = 'none'; if (resultCard) resultCard.style.display = 'block'; if (resultFileName) resultFileName.textContent = `${sanitizeFilename(title)}.epub`; if (resultFileSize) resultFileSize.textContent = formatFileSize(epubBlob.size); if (convertBtn) convertBtn.disabled = false; }, 500);
                 } catch (error) {
-                    clearInterval(progressInterval); log(`Conversion error: ${error.message}`, 'error'); alert(`转换过程中发生错误: ${error.message}`); if (convertBtn) convertBtn.disabled = false; resetConverter();
+                    clearInterval(progressInterval); log(`Conversion error: ${error.message}`, 'error'); showCustomAlert(`转换过程中发生错误: <br>${error.message}`, '转换失败', 'error', () => {
+                            // resetConverter(); // 如果 resetConverter 会清除其他状态，确保这是期望的行为
+                            // 或者仅重置UI到可以重新尝试的状态
+                            if (uploadCard) uploadCard.style.display = 'block';
+                            if (progressCard) progressCard.style.display = 'none';
+                            if (convertBtn) convertBtn.disabled = !selectedFile; // 只有当有文件时才解禁
+                        }); 
                 }
             }
             function resetConverter() { 
@@ -1702,12 +2194,12 @@
                  log('Converter reset to initial state', 'info');
             }
             function downloadEpub() { 
-                 if (!epubBlob) { log('Download error: No EPUB file generated', 'error'); alert('错误：没有生成 EPUB 文件'); return; } const title = bookTitle?.value || 'Untitled_Book'; const filename = `${sanitizeFilename(title)}.epub`; if (typeof saveAs === 'undefined') { log('FileSaver.js not found, using fallback download method', 'warning'); const url = URL.createObjectURL(epubBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); } else { saveAs(epubBlob, filename); } log(`EPUB downloaded as: ${filename}`, 'success');
+                 if (!epubBlob) { log('Download error: No EPUB file generated', 'error'); showCustomAlert('没有可供下载的 EPUB 文件。请先成功转换一个文件。', '下载错误', 'error'); return; } const title = bookTitle?.value || 'Untitled_Book'; const filename = `${sanitizeFilename(title)}.epub`; if (typeof saveAs === 'undefined') { log('FileSaver.js not found, using fallback download method', 'warning'); const url = URL.createObjectURL(epubBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); } else { saveAs(epubBlob, filename); } log(`EPUB downloaded as: ${filename}`, 'success');
             }
 
             // --- Text Processing & EPUB Generation ---
             function getChapterPatternRegex() { 
-                 if (!chapterPattern) return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; switch (chapterPattern.value) { case 'auto': return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; case 'chinese': return /^第[0-9一二三四五六七八九十百千万亿零〇]+[章节回集幕部篇](\s|$)/; case 'english': return /^(Chapter|CHAPTER)\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; case 'numbered': return /^\d+\.\s+/; case 'custom': try { if (customChapterPattern?.value) return new RegExp(customChapterPattern.value, 'i'); else { log('Empty custom chapter pattern, using auto-detect instead', 'warning'); return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; } } catch (e) { log(`Invalid chapter regex pattern: ${e.message}`, 'error'); alert('无效的自定义章节模式。将使用自动检测。'); return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; } default: return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; }
+                 if (!chapterPattern) return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; switch (chapterPattern.value) { case 'auto': return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; case 'chinese': return /^第[0-9一二三四五六七八九十百千万亿零〇]+[章节回集幕部篇](\s|$)/; case 'english': return /^(Chapter|CHAPTER)\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; case 'numbered': return /^\d+\.\s+/; case 'custom': try { if (customChapterPattern?.value) return new RegExp(customChapterPattern.value, 'i'); else { log('Empty custom chapter pattern, using auto-detect instead', 'warning'); return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; } } catch (e) { log(`Invalid chapter regex pattern: ${e.message}`, 'error'); showCustomAlert('您输入的自定义章节模式无效。<br>系统将自动切换回默认的章节检测模式。', '模式格式警告', 'warning'); return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; } default: return /^第[0-9一二三四五六七八九十零〇百千两 ]+[章回节集幕]|^[Ss]ection.{0,20}$|^[Cc]hapter.{0,20}$|^[Pp]age.{0,20}$|^\d{1,4}\.?\s*$|^引子$|^楔子$|^序章$|^序幕$|^尾声$|^最终章|^番外\d?\w{0,20}|^后记$|^完本感言.{0,4}$/i; }
             }
             function getVolumePatternRegex() { 
                 if (!volumePattern || volumePattern.value === 'disabled') return null; switch (volumePattern.value) { case 'auto': return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)|^Volume\s+([0-9]+|[IVXLCDM]+)(\s|$)|^Book\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; case 'chinese': return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)/; case 'english': return /^(Volume|Book)\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; case 'custom': try { if (customVolumePattern?.value) return new RegExp(customVolumePattern.value, 'i'); else { log('Empty custom volume pattern, using auto-detect instead', 'warning'); return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)|^Volume\s+([0-9]+|[IVXLCDM]+)(\s|$)|^Book\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; } } catch (e) { log(`Invalid volume regex pattern: ${e.message}`, 'error'); alert('无效的自定义卷/部模式。将使用自动检测。'); return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)|^Volume\s+([0-9]+|[IVXLCDM]+)(\s|$)|^Book\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; } default: return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)|^Volume\s+([0-9]+|[IVXLCDM]+)(\s|$)|^Book\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; }
@@ -1963,6 +2455,7 @@
             function sanitizeFilename(name) { 
                 if (!name) return 'Untitled'; return name.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').replace(/__+/g, '_').replace(/^_+|_+$/g, '');
             }
+            loadUserSettings();
         });
     </script>
 </body>
