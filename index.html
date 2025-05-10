@@ -1071,14 +1071,6 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="maxTitleLength">标题最大长度</label>
-                            <input type="number" id="maxTitleLength" class="form-control" min="1" max="100" value="35">
-                        </div>
-                        <div class="form-group">
-                            <label for="unknownTitleName">未知章节名</label>
-                            <input type="text" id="unknownTitleName" class="form-control" value="章节正文">
-                        </div>
-                        <div class="form-group">
                             <label for="indent">段落首行缩进 (em)</label>
                             <input type="number" id="indent" class="form-control" min="0" max="8" step="0.1" value="2">
                         </div>
@@ -1251,8 +1243,6 @@
             const customVolumeArea = document.getElementById('customVolumeArea');
             const customChapterPattern = document.getElementById('customChapterPattern');
             const customVolumePattern = document.getElementById('customVolumePattern');
-            const maxTitleLength = document.getElementById('maxTitleLength');
-            const unknownTitleName = document.getElementById('unknownTitleName');
             const coverUpload = document.getElementById('coverUpload');
             const coverSearch = document.getElementById('coverSearch');
             const coverNone = document.getElementById('coverNone');
@@ -1322,8 +1312,6 @@
                     customChapterPattern: customChapterPattern?.value, // 始终保存，加载时根据chapterPattern决定是否应用
                     volumePattern: volumePattern?.value,
                     customVolumePattern: customVolumePattern?.value,   // 始终保存
-                    maxTitleLength: maxTitleLength?.value,
-                    unknownTitleName: unknownTitleName?.value,
 
                     coverOption: document.querySelector('input[name="coverOption"]:checked')?.value,
                     onlineSource: typeof onlineSourceSelect !== 'undefined' ? onlineSourceSelect?.value : 'qidian', // 默认qidian
@@ -1373,8 +1361,6 @@
                     if (settings.customChapterPattern && customChapterPattern) customChapterPattern.value = settings.customChapterPattern;
                     if (settings.volumePattern && volumePattern) volumePattern.value = settings.volumePattern;
                     if (settings.customVolumePattern && customVolumePattern) customVolumePattern.value = settings.customVolumePattern;
-                    if (settings.maxTitleLength && maxTitleLength) maxTitleLength.value = settings.maxTitleLength;
-                    if (settings.unknownTitleName && unknownTitleName) unknownTitleName.value = settings.unknownTitleName;
 
                     // 应用封面设置
                     if (settings.coverOption) {
@@ -1794,7 +1780,7 @@
                     chapterPattern, volumePattern, titleAlign, paragraphSpacing, debugMode,
                     (typeof onlineSourceSelect !== 'undefined' ? onlineSourceSelect : null), // 条件性添加
                     // Inputs (text/number)
-                    customChapterPattern, customVolumePattern, maxTitleLength, unknownTitleName, indent
+                    customChapterPattern, customVolumePattern, indent
                 ].filter(el => el != null); // 过滤掉可能未定义的元素
 
                 settingsToTrack.forEach(element => {
@@ -2157,7 +2143,7 @@
                 const options = {
                     title, author, language,
                     chapterPattern: getChapterPatternRegex(), volumePattern: getVolumePatternRegex(),
-                    maxTitleLength: parseInt(maxTitleLength?.value) || 35, unknownTitleName: unknownTitleName?.value || '章节正文',
+                    maxTitleLength: 35, unknownTitleName: '章节正文',
                     indent: parseFloat(indent?.value) || 2, titleAlign: titleAlign?.value || 'center', fontFamily: 'default',
                     fontSize: '1em', lineHeight: '1.6', paragraphSpacing: paragraphSpacing?.value || '1em'
                 };
