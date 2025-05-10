@@ -190,6 +190,9 @@
             padding-bottom: 15px;
             position: relative;
         }
+        .settings-body {
+            padding-bottom: 60px; /* Space for the decorative element */
+        }
         /* Add a decorative element */
         .settings-header::after {
             content: '';
@@ -955,13 +958,7 @@
                 <div class="sidebar-icon active" data-section="bookInfoSection"> <i class="fas fa-book"></i>
                 </div>
                 <div class="sidebar-icon" data-section="chapterSection">
-                    <i class="fas fa-list-ol"></i>
-                </div>
-                <div class="sidebar-icon" data-section="coverSection">
-                    <i class="fas fa-image"></i>
-                </div>
-                <div class="sidebar-icon" data-section="appearanceSection">
-                    <i class="fas fa-palette"></i>
+                    <i class="fas fa-wrench"></i>
                 </div>
                 <div class="sidebar-icon" data-section="debugSection">
                     <i class="fas fa-bug"></i>
@@ -976,11 +973,11 @@
                     <div class="settings-body">
                         <div class="form-group">
                             <label for="bookTitle">书名</label>
-                            <input type="text" id="bookTitle" class="form-control" placeholder="例如：了不起的盖茨比">
+                            <input type="text" id="bookTitle" class="form-control" placeholder="例如：仙逆">
                         </div>
                         <div class="form-group">
                             <label for="bookAuthor">作者</label>
-                            <input type="text" id="bookAuthor" class="form-control" placeholder="例如：菲茨杰拉德">
+                            <input type="text" id="bookAuthor" class="form-control" placeholder="例如：耳根">
                         </div>
                         <div class="form-group">
                             <label for="bookLanguage">语言</label>
@@ -990,62 +987,6 @@
                                 <option value="en">English</option>
                             </select>
                         </div>
-                    </div>
-                </div>
-
-                <div class="settings-section" id="chapterSection">
-                    <div class="settings-header">
-                        <h3><i class="fas fa-cut"></i>章节识别</h3>
-                    </div>
-                    <div class="settings-body">
-                        <div class="form-group">
-                            <label for="chapterPattern">章节模式</label>
-                            <select id="chapterPattern" class="form-control">
-                                <option value="auto">自动识别</option>
-                                <option value="chinese">中文 (第X章)</option>
-                                <option value="english">英文 (Chapter X)</option>
-                                <option value="numbered">数字 (1., 2.)</option>
-                                <option value="custom">自定义正则</option>
-                            </select>
-                        </div>
-                        <div id="customChapterArea" style="display: none;">
-                            <div class="form-group">
-                                <label for="customChapterPattern">自定义章节正则</label>
-                                <input type="text" id="customChapterPattern" class="form-control" placeholder="^第[0-9一二三四五六七八九十零〇百千两 ]+[章]">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="volumePattern">卷/部模式</label>
-                            <select id="volumePattern" class="form-control">
-                                <option value="auto">自动识别</option>
-                                <option value="chinese">中文 (第X卷/部)</option>
-                                <option value="english">英文 (Volume/Book X)</option>
-                                <option value="disabled">不识别</option>
-                                <option value="custom">自定义正则</option>
-                            </select>
-                        </div>
-                        <div id="customVolumeArea" style="display: none;">
-                            <div class="form-group">
-                                <label for="customVolumePattern">自定义卷/部正则</label>
-                                <input type="text" id="customVolumePattern" class="form-control" placeholder="^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部]">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="maxTitleLength">标题最大长度</label>
-                            <input type="number" id="maxTitleLength" class="form-control" min="1" max="100" value="35">
-                        </div>
-                        <div class="form-group">
-                            <label for="unknownTitleName">未知章节名</label>
-                            <input type="text" id="unknownTitleName" class="form-control" value="章节正文">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-section" id="coverSection">
-                    <div class="settings-header">
-                        <h3><i class="far fa-image"></i>封面选项</h3>
-                    </div>
-                    <div class="settings-body">
                         <div class="form-group">
                             <label>封面来源</label>
                             <div class="radio-group">
@@ -1092,11 +1033,51 @@
                     </div>
                 </div>
 
-                <div class="settings-section" id="appearanceSection">
+                <div class="settings-section" id="chapterSection">
                     <div class="settings-header">
-                        <h3><i class="fas fa-paint-brush"></i>外观设置</h3>
+                        <h3><i class="fas fa-cut"></i>内容与样式</h3>
                     </div>
                     <div class="settings-body">
+                        <div class="form-group">
+                            <label for="chapterPattern">章节模式</label>
+                            <select id="chapterPattern" class="form-control">
+                                <option value="auto">自动识别</option>
+                                <option value="chinese">中文 (第X章)</option>
+                                <option value="english">英文 (Chapter X)</option>
+                                <option value="numbered">数字 (1., 2.)</option>
+                                <option value="custom">自定义正则</option>
+                            </select>
+                        </div>
+                        <div id="customChapterArea" style="display: none;">
+                            <div class="form-group">
+                                <label for="customChapterPattern">自定义章节正则</label>
+                                <input type="text" id="customChapterPattern" class="form-control" placeholder="^第[0-9一二三四五六七八九十零〇百千两 ]+[章]">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="volumePattern">卷/部模式</label>
+                            <select id="volumePattern" class="form-control">
+                                <option value="auto">自动识别</option>
+                                <option value="chinese">中文 (第X卷/部)</option>
+                                <option value="english">英文 (Volume/Book X)</option>
+                                <option value="disabled">不识别</option>
+                                <option value="custom">自定义正则</option>
+                            </select>
+                        </div>
+                        <div id="customVolumeArea" style="display: none;">
+                            <div class="form-group">
+                                <label for="customVolumePattern">自定义卷/部正则</label>
+                                <input type="text" id="customVolumePattern" class="form-control" placeholder="^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部]">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="maxTitleLength">标题最大长度</label>
+                            <input type="number" id="maxTitleLength" class="form-control" min="1" max="100" value="35">
+                        </div>
+                        <div class="form-group">
+                            <label for="unknownTitleName">未知章节名</label>
+                            <input type="text" id="unknownTitleName" class="form-control" value="章节正文">
+                        </div>
                         <div class="form-group">
                             <label for="indent">段落首行缩进 (em)</label>
                             <input type="number" id="indent" class="form-control" min="0" max="8" step="0.1" value="2">
@@ -1107,33 +1088,6 @@
                                 <option value="center">居中</option>
                                 <option value="left">左对齐</option>
                                 <option value="right">右对齐</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="fontFamily">字体</label>
-                            <select id="fontFamily" class="form-control">
-                                <option value="default">默认</option>
-                                <option value="serif">衬线</option>
-                                <option value="sans">无衬线</option>
-                                <option value="mono">等宽</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="fontSize">基础字号</label>
-                            <select id="fontSize" class="form-control">
-                                <option value="1em">默认 (1em)</option>
-                                <option value="0.9em">小 (0.9em)</option>
-                                <option value="1.1em">大 (1.1em)</option>
-                                <option value="1.2em">更大 (1.2em)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="lineHeight">行高</label>
-                            <select id="lineHeight" class="form-control">
-                                <option value="1.6">默认 (1.6)</option>
-                                <option value="1.4">紧凑 (1.4)</option>
-                                <option value="1.8">宽松 (1.8)</option>
-                                <option value="2.0">更宽松 (2.0)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1322,9 +1276,6 @@
             const coverIndicator = document.getElementById('coverIndicator');
             const indent = document.getElementById('indent');
             const titleAlign = document.getElementById('titleAlign');
-            const fontFamily = document.getElementById('fontFamily');
-            const fontSize = document.getElementById('fontSize');
-            const lineHeight = document.getElementById('lineHeight');
             const paragraphSpacing = document.getElementById('paragraphSpacing');
             const debugAreaDOM = document.getElementById('debugAreaDOM');
             const debugLog = document.getElementById('debugLog');
@@ -1379,9 +1330,6 @@
 
                     indent: indent?.value,
                     titleAlign: titleAlign?.value,
-                    fontFamily: fontFamily?.value,
-                    fontSize: fontSize?.value,
-                    lineHeight: lineHeight?.value,
                     paragraphSpacing: paragraphSpacing?.value,
 
                     debugMode: debugMode?.value,
@@ -1440,9 +1388,6 @@
                     // 应用外观设置
                     if (settings.indent && indent) indent.value = settings.indent;
                     if (settings.titleAlign && titleAlign) titleAlign.value = settings.titleAlign;
-                    if (settings.fontFamily && fontFamily) fontFamily.value = settings.fontFamily;
-                    if (settings.fontSize && fontSize) fontSize.value = settings.fontSize;
-                    if (settings.lineHeight && lineHeight) lineHeight.value = settings.lineHeight;
                     if (settings.paragraphSpacing && paragraphSpacing) paragraphSpacing.value = settings.paragraphSpacing;
 
                     // 应用调试设置
@@ -1643,7 +1588,7 @@
                 if (changeCoverInSummaryBtn) {
                     changeCoverInSummaryBtn.addEventListener('click', (event) => { // 传入 event 对象
                         event.stopPropagation(); // 阻止事件冒泡
-                        activateSection('coverSection', document.querySelector('.sidebar-icon[data-section="coverSection"]'));
+                        activateSection('bookInfoSection', document.querySelector('.sidebar-icon[data-section="bookInfoSection"]'));
                         if (window.innerWidth <= 992 && sidebar && !sidebar.classList.contains('sidebar-visible')) {
                             sidebar.classList.add('sidebar-visible');
                         }
@@ -1846,7 +1791,7 @@
                 // 更简洁的方式：将需要监听的元素放入数组统一处理
                 const settingsToTrack = [
                     // Selects
-                    chapterPattern, volumePattern, titleAlign, fontFamily, fontSize, lineHeight, paragraphSpacing, debugMode,
+                    chapterPattern, volumePattern, titleAlign, paragraphSpacing, debugMode,
                     (typeof onlineSourceSelect !== 'undefined' ? onlineSourceSelect : null), // 条件性添加
                     // Inputs (text/number)
                     customChapterPattern, customVolumePattern, maxTitleLength, unknownTitleName, indent
@@ -2023,7 +1968,7 @@
                 if (!userApiKey) {
                     log("Google Books API Key 未在设置中配置。将跳过 Google Books 搜索。", "warning");
                     // 通知用户API Key缺失，所以Google Books源不可用
-                    // showCustomAlert("Google Books 封面搜索需要您在“调试选项”中配置有效的API Key。", "API Key缺失", "warning");
+                    showCustomAlert("Google Books 封面搜索需要您在“调试选项”中配置有效的API Key。", "API Key缺失", "warning");
                     // 清空可能存在的旧结果，并直接返回
                     onlineCoverResults = []; // 确保结果数组被清空
                     // 注意：这里不抛出错误，而是静默失败，searchOnlineCover 会处理无结果的情况
@@ -2213,8 +2158,8 @@
                     title, author, language,
                     chapterPattern: getChapterPatternRegex(), volumePattern: getVolumePatternRegex(),
                     maxTitleLength: parseInt(maxTitleLength?.value) || 35, unknownTitleName: unknownTitleName?.value || '章节正文',
-                    indent: parseFloat(indent?.value) || 2, titleAlign: titleAlign?.value || 'center', fontFamily: fontFamily?.value || 'default',
-                    fontSize: fontSize?.value || '1em', lineHeight: lineHeight?.value || '1.6', paragraphSpacing: paragraphSpacing?.value || '1em'
+                    indent: parseFloat(indent?.value) || 2, titleAlign: titleAlign?.value || 'center', fontFamily: 'default',
+                    fontSize: '1em', lineHeight: '1.6', paragraphSpacing: paragraphSpacing?.value || '1em'
                 };
                 log(`Starting conversion with options: ${JSON.stringify(options)}`, 'info');
                 if (uploadCard) uploadCard.style.display = 'none'; if (debugAreaDOM) debugAreaDOM.style.display = (debugMode?.value === 'on') ? 'block' : 'none'; if (progressCard) progressCard.style.display = 'block'; if (convertBtn) convertBtn.disabled = true;
