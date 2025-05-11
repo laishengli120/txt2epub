@@ -1903,8 +1903,10 @@
 
                 const response = await fetch(netlifyFunctionUrl); 
                 
-                if (!response.ok) throw new Error(`Netlify函数调用失败 (状态 ${response.status}): ${errorData.error || response.statusText}`);
-                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: "无法解析错误响应" }));
+                    throw new Error(`Netlify函数调用失败 (状态 ${response.status}): ${errorData.error || response.statusText}`);
+                }
                 const htmlContent = await response.text(); 
                 log('Received Qidian search page.');
 
