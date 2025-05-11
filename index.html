@@ -1891,18 +1891,19 @@
             }
 
             async function fetchQidianCoversInternal(bookname) {
-                const corsProxy = 'https://corsproxy.io/?'; 
-                const targetUrl = encodeURIComponent(`https://m.qidian.com/soushu/${encodeURIComponent(bookname)}.html`); 
-                const proxyUrl = corsProxy + targetUrl;
-                log(`Connecting to Qidian search URL: ${proxyUrl}`); // Log proxied URL
+                // const corsProxy = 'https://corsproxy.io/?'; 
+                // const targetUrl = encodeURIComponent(`https://m.qidian.com/soushu/${encodeURIComponent(bookname)}.html`); 
+                // const proxyUrl = corsProxy + targetUrl;
+                // log(`Connecting to Qidian search URL: ${proxyUrl}`); // Log proxied URL
+                // const netlifyCorsProxy = 'https://cors-anywhere.herokuapp.com/'; // 备用代理
+                // const proxyUrlFallback = netlifyCorsProxy + targetUrl; // 备用代理URL
+                const netlifyFunctionUrl = `/.netlify/functions/fetch-qidian?bookname=${encodeURIComponent(bookname)}`;
+                log(`正在调用Netlify函数获取起点数据: ${netlifyFunctionUrl}`);
                 
-                const controller = new AbortController(); 
-                const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
 
-                const response = await fetch(proxyUrl, { signal: controller.signal }); 
-                clearTimeout(timeoutId);
+                const response = await fetch(netlifyFunctionUrl); 
                 
-                if (!response.ok) throw new Error(`Failed to fetch search results: ${response.status} ${response.statusText}`);
+                if (!response.ok) throw new Error(`Netlify函数调用失败 (状态 ${response.status}): ${errorData.error || response.statusText}`);
                 
                 const htmlContent = await response.text(); 
                 log('Received Qidian search page.');
