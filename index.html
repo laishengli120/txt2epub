@@ -2199,7 +2199,7 @@
                  log('Converter reset to initial state', 'info');
             }
             function downloadEpub() { 
-                 if (!epubBlob) { log('Download error: No EPUB file generated', 'error'); showCustomAlert('没有可供下载的 EPUB 文件。请先成功转换一个文件。', '下载错误', 'error'); return; } const title = bookTitle?.value || 'Untitled_Book'; const filename = `${sanitizeFilename(title)}.epub`; if (typeof saveAs === 'undefined') { log('FileSaver.js not found, using fallback download method', 'warning'); const url = URL.createObjectURL(epubBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); } else { saveAs(epubBlob, filename); } log(`EPUB downloaded as: ${filename}`, 'success');
+                 if (!epubBlob) { log('Download error: No EPUB file generated', 'error'); showCustomAlert('没有可供下载的 EPUB 文件。请先成功转换一个文件。', '下载错误', 'error'); return; } const title = bookTitle?.value || 'Untitled_Book'; const filename = `${sanitizeFilename(title)}.epub`; const isQuark = /Quark/i.test(navigator.userAgent); if (typeof saveAs === 'undefined' || isQuark) { log('FileSaver.js not found, using fallback download method', 'warning'); const url = URL.createObjectURL(epubBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); } else { saveAs(epubBlob, filename); } log(`EPUB downloaded as: ${filename}`, 'success');
             }
 
             // --- Text Processing & EPUB Generation ---
@@ -2232,7 +2232,7 @@
                 try { 
                     if (typeof JSZip === 'undefined') throw new Error('JSZip library not found'); 
                     const zip = new JSZip(); 
-                    zip.file('mimetype', 'application/octet-stream', {compression: "STORE"}); 
+                    zip.file('mimetype', 'application/epub+zip', {compression: "STORE"}); 
                     const metaInf = zip.folder('META-INF'); 
                     metaInf.file('container.xml', '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>'); 
                     const oebps = zip.folder('OEBPS'); 
