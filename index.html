@@ -1216,7 +1216,7 @@
         </div>
     </div>
 
-    // 由于夸克浏览器下载功能不支持，所以引导用户使用其他浏览器
+    <!-- 由于夸克浏览器下载功能不支持，所以引导用户使用其他浏览器 -->
     <div id="browserCompatibilityMessage" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background-color: var(--memphis-secondary); color: var(--memphis-dark); padding: 15px; text-align: center; z-index: 3000; border-bottom: var(--bold-border); box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
         <p style="margin: 0 0 10px 0; font-size: 0.9rem;">
             检测到您可能正在使用夸克浏览器。为了获得最佳体验（特别是文件下载功能），建议您复制当前网址并在系统默认浏览器或其他主流浏览器（如Chrome、Edge、Firefox）中打开本站。
@@ -1344,6 +1344,7 @@
                     log('Not a Quark browser or UA string does not contain "Quark".', 'info');
                 }
             }
+            detectQuarkBrowserAndNotify();
         // ------- 夸克浏览器结束 --------
 
             // 在获取其他 DOM 元素的地方添加：
