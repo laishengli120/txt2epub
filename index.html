@@ -1216,6 +1216,15 @@
         </div>
     </div>
 
+    // 由于夸克浏览器下载功能不支持，所以引导用户使用其他浏览器
+    <div id="browserCompatibilityMessage" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background-color: var(--memphis-secondary); color: var(--memphis-dark); padding: 15px; text-align: center; z-index: 3000; border-bottom: var(--bold-border); box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+        <p style="margin: 0 0 10px 0; font-size: 0.9rem;">
+            检测到您可能正在使用夸克浏览器。为了获得最佳体验（特别是文件下载功能），建议您复制当前网址并在系统默认浏览器或其他主流浏览器（如Chrome、Edge、Firefox）中打开本站。
+        </p>
+        <button id="copyLinkBtn" class="btn btn-sm" style="background-color: var(--memphis-primary); color: var(--memphis-white); margin-right: 10px;">复制链接</button>
+        <button id="continueInQuarkBtn" class="btn btn-sm btn-outline">继续在此浏览器使用</button>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // DOM Elements
@@ -1281,6 +1290,61 @@
             const resultFileSize = document.getElementById('resultFileSize');
             const downloadBtn = document.getElementById('downloadBtn');
             const convertNewBtn = document.getElementById('convertNewBtn');
+
+
+            // ----------夸克浏览器--------
+            const browserCompatibilityMessage = document.getElementById('browserCompatibilityMessage');
+            const copyLinkBtn = document.getElementById('copyLinkBtn');
+            const continueInQuarkBtn = document.getElementById('continueInQuarkBtn');
+
+            function detectQuarkBrowserAndNotify() {
+                const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+                // 夸克浏览器的User Agent通常包含 "Quark" 关键词
+                // 需要更精确的检测可能比较复杂，但 "Quark" 是一个很好的初步指标
+                if (/Quark/i.test(userAgent)) {
+                    log('Quark browser detected. Displaying compatibility message.', 'info');
+                    if (browserCompatibilityMessage) {
+                        browserCompatibilityMessage.style.display = 'block';
+                    }
+
+                    if (copyLinkBtn) {
+                        copyLinkBtn.addEventListener('click', () => {
+                            const currentUrl = window.location.href;
+                            navigator.clipboard.writeText(currentUrl)
+                                .then(() => {
+                                    showCustomAlert('链接已复制到剪贴板！请在其他浏览器中粘贴打开。', '复制成功', 'success');
+                                    // browserCompatibilityMessage.style.display = 'none'; // 可选：复制后隐藏提示
+                                })
+                                .catch(err => {
+                                    log('Failed to copy link: ' + err, 'error');
+                                    showCustomAlert('链接复制失败，请手动复制浏览器地址栏中的网址。', '复制失败', 'error');
+                                });
+                        });
+                    }
+
+                    if (continueInQuarkBtn) {
+                        continueInQuarkBtn.addEventListener('click', () => {
+                            if (browserCompatibilityMessage) {
+                                browserCompatibilityMessage.style.display = 'none';
+                            }
+                            // 用户选择继续，可以记录一下或不再打扰
+                            // 也可以在这里用localStorage记录用户已“忽略”此提示，本次会话不再显示
+                            sessionStorage.setItem('ignoredQuarkWarning', 'true');
+                        });
+                    }
+
+                    // 如果用户已经忽略过，本次会话不再显示
+                    if (sessionStorage.getItem('ignoredQuarkWarning') === 'true') {
+                        if (browserCompatibilityMessage) {
+                            browserCompatibilityMessage.style.display = 'none';
+                        }
+                    }
+
+                } else {
+                    log('Not a Quark browser or UA string does not contain "Quark".', 'info');
+                }
+            }
+        // ------- 夸克浏览器结束 --------
 
             // 在获取其他 DOM 元素的地方添加：
             const googleBooksApiKeyInput = document.getElementById('googleBooksApiKeyInput');
@@ -2199,7 +2263,7 @@
                  log('Converter reset to initial state', 'info');
             }
             function downloadEpub() { 
-                 if (!epubBlob) { log('Download error: No EPUB file generated', 'error'); showCustomAlert('没有可供下载的 EPUB 文件。请先成功转换一个文件。', '下载错误', 'error'); return; } const title = bookTitle?.value || 'Untitled_Book'; const filename = `${sanitizeFilename(title)}.epub`; const isQuark = /Quark/i.test(navigator.userAgent); log(isQuark); log(navigator.userAgent); if (typeof saveAs === 'undefined' || isQuark) { log('FileSaver.js not found, using fallback download method', 'warning'); const url = URL.createObjectURL(epubBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); } else { saveAs(epubBlob, filename); } log(`EPUB downloaded as: ${filename}`, 'success');
+                 if (!epubBlob) { log('Download error: No EPUB file generated', 'error'); showCustomAlert('没有可供下载的 EPUB 文件。请先成功转换一个文件。', '下载错误', 'error'); return; } const title = bookTitle?.value || 'Untitled_Book'; const filename = `${sanitizeFilename(title)}.epub`; if (typeof saveAs === 'undefined' || isQuark) { log('FileSaver.js not found, using fallback download method', 'warning'); const url = URL.createObjectURL(epubBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); } else { saveAs(epubBlob, filename); } log(`EPUB downloaded as: ${filename}`, 'success');
             }
 
             // --- Text Processing & EPUB Generation ---
