@@ -980,14 +980,6 @@
                             <input type="text" id="bookAuthor" class="form-control" placeholder="例如：耳根">
                         </div>
                         <div class="form-group">
-                            <label for="bookLanguage">语言</label>
-                            <select id="bookLanguage" class="form-control">
-                                <option value="zh-CN">中文（简体）</option>
-                                <option value="zh-TW">中文（繁体）</option>
-                                <option value="en">English</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
                             <label>封面来源</label>
                             <div class="radio-group">
                                 <div class="radio-option">
@@ -1007,7 +999,7 @@
                         <div id="onlineSourceSelectionArea" class="form-group" style="display: none; margin-left: 20px;">
                             <label for="onlineSourceSelect">选择在线来源:</label>
                             <select id="onlineSourceSelect" class="form-control">
-                                <option value="qidian" selected>起点小说 (小说类推荐)</option>
+                                <option value="起点网" selected>起点小说 (小说类推荐)</option>
                                 <option value="openlibrary">Open Library (综合/外文)</option>
                                 <option value="googlebooks">Google Books (综合/需API Key)</option>
                                 </select>
@@ -1245,7 +1237,6 @@
             const removeTxtBtn = document.getElementById('removeTxtBtn');
             const bookTitle = document.getElementById('bookTitle');
             const bookAuthor = document.getElementById('bookAuthor');
-            const bookLanguage = document.getElementById('bookLanguage');
             const chapterPattern = document.getElementById('chapterPattern');
             const volumePattern = document.getElementById('volumePattern');
             const customChapterArea = document.getElementById('customChapterArea');
@@ -1379,7 +1370,7 @@
                     customVolumePattern: customVolumePattern?.value,   // 始终保存
 
                     coverOption: document.querySelector('input[name="coverOption"]:checked')?.value,
-                    onlineSource: typeof onlineSourceSelect !== 'undefined' ? onlineSourceSelect?.value : 'qidian', // 默认qidian
+                    onlineSource: typeof onlineSourceSelect !== 'undefined' ? onlineSourceSelect?.value : '起点网', // 默认qidian
 
                     indent: indent?.value,
                     titleAlign: titleAlign?.value,
@@ -1757,12 +1748,19 @@
                     if (!txtFileFound) log('No .txt file found in dropped files.', 'warning');
                 }
             }
-            function handleFileSelect() {
+
+            // 在 handleFileSelect 函数中
+            async function handleFileSelect() {
                 if (fileInput.files.length > 0) {
                     selectedFile = fileInput.files[0];
                     if (!selectedFile.name.toLowerCase().endsWith('.txt')) {
-                        log('Error: Not a .txt file', 'error'); showCustomAlert('请选择一个有效的 .txt 文件。', '文件类型错误', 'error'); removeFile(); return;
+                        log('错误: 不是 .txt 文件', 'error');
+                        showCustomAlert('请选择一个有效的 .txt 文件。', '文件类型错误', 'error');
+                        removeFile(); // removeFile 函数会重置 UI
+                        return;
                     }
+
+                    // 更新UI显示文件名和大小
                     if (txtFileName) txtFileName.textContent = selectedFile.name;
                     if (txtFileSize) txtFileSize.textContent = formatFileSize(selectedFile.size);
                     if (txtPreview) txtPreview.style.display = 'flex';
@@ -1770,20 +1768,49 @@
                     if (dropArea) dropArea.style.display = 'none';
                     if (txtEncoding) txtEncoding.textContent = '检测中...';
 
-                    detectEncoding(selectedFile).then(encodingInfo => {
+                    try {
+                        // 1. 读取文件为 ArrayBuffer (已有逻辑)
+                        fileArrayBuffer = await readFileAsArrayBuffer(selectedFile);
+
+                        // 2. 检测文件编码 (已有逻辑)
+                        const encodingInfo = await detectEncoding(selectedFile); // detectEncoding 内部已设置 fileArrayBuffer
                         detectedEncoding = encodingInfo.encoding;
-                        if (txtEncoding) txtEncoding.textContent = `${encodingInfo.encoding} (${Math.round(encodingInfo.confidence * 100)}%)`;
-                        log(`Detected encoding: ${encodingInfo.encoding} with confidence ${Math.round(encodingInfo.confidence * 100)}%`);
-                        extractTitleAuthor(selectedFile.name);
+                        if (txtEncoding) txtEncoding.textContent = `${encodingInfo.encoding}`;
+                        log(`检测到编码: ${encodingInfo.encoding} 置信度 ${Math.round(encodingInfo.confidence * 100)}%`);
+
+                        // 3. 首先尝试从文件名提取书名和作者 (您原有的 extractTitleAuthor 函数会直接修改 DOM 元素)
+                        extractTitleAuthor(selectedFile.name); // 这个函数会设置 bookTitle.value 和 bookAuthor.value
+
+
+                        // 4. 解码文件头部的一小部分文本样本
+                        const textSample = await decodeSampleText(fileArrayBuffer, detectedEncoding);
+
+                        // 5. 尝试从文本内容中提取书名和作者
+                        if (textSample) {
+                            const contentMeta = extractTitleAuthorFromContent(textSample);
+                            if (!bookTitle.value && contentMeta.title) {
+                                bookTitle.value = contentMeta.title; // 用内容提取的结果覆盖
+                                log(`从内容中提取到书名并更新: "${contentMeta.title}"`);
+                            }
+                            if (!bookAuthor.value && contentMeta.author) {
+                                bookAuthor.value = contentMeta.author; // 用内容提取的结果覆盖
+                                log(`从内容中提取到作者并更新: "${contentMeta.author}"`);
+                            }
+                        }
+
+                        // 6. 更新摘要信息和触发封面搜索 (已有逻辑)
                         updateSummary();
-                        if (coverSearch && coverSearch.checked) searchOnlineCover();
-                    }).catch(error => {
-                        log(`Error detecting encoding: ${error.message}`, 'error');
+                        if (coverSearch && coverSearch.checked) {
+                            searchOnlineCover();
+                        }
+                    } catch (error) {
+                        log(`处理文件选择时出错: ${error.message}`, 'error');
+                        showCustomAlert(`处理文件失败: ${error.message}`, '处理错误', 'error');
                         if (txtEncoding) txtEncoding.textContent = '错误';
-                        extractTitleAuthor(selectedFile.name);
-                        updateSummary();
-                        if (coverSearch && coverSearch.checked) searchOnlineCover();
-                    });
+                        // 即使出错，也尝试用文件名提取一次（如果之前没做或想重试）
+                        extractTitleAuthor(selectedFile.name); // 确保至少有基于文件名的尝试
+                        updateSummary(); // 更新摘要显示
+                    }
                 }
             }
             function handleCoverSelect() {
@@ -1915,11 +1942,11 @@
                 updateSummary(); // 更新概要，可能显示“搜索中”
 
                 const currentSource = onlineSourceSelect.value; // 获取用户选择的来源
-                log(`Searching for cover with query: "${bookname}" using source: ${currentSource}`);
+                log(`搜索封面: "${bookname}" 使用: ${currentSource}`);
 
                 try {
                     switch (currentSource) {
-                        case 'qidian':
+                        case '起点网':
                             await fetchQidianCoversInternal(bookname); // 提取出的起点特定逻辑
                             break;
                         case 'openlibrary':
@@ -1963,7 +1990,7 @@
                 // const netlifyCorsProxy = 'https://cors-anywhere.herokuapp.com/'; // 备用代理
                 // const proxyUrlFallback = netlifyCorsProxy + targetUrl; // 备用代理URL
                 const netlifyFunctionUrl = `/.netlify/functions/fetch-qidian?bookname=${encodeURIComponent(bookname)}`;
-                log(`正在调用Netlify函数获取起点数据: ${netlifyFunctionUrl}`);
+                log(`正在获取起点数据...`);
                 
 
                 const response = await fetch(netlifyFunctionUrl); 
@@ -1973,7 +2000,7 @@
                     throw new Error(`Netlify函数调用失败 (状态 ${response.status}): ${errorData.error || response.statusText}`);
                 }
                 const htmlContent = await response.text(); 
-                log('Received Qidian search page.');
+                log('成功接收到封面数据！');
 
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(htmlContent, 'text/html');
@@ -2205,31 +2232,40 @@
                 if (downloadBtn) downloadBtn.addEventListener('click', downloadEpub);
                 if (convertNewBtn) convertNewBtn.addEventListener('click', resetConverter);
             }
+            function updateProgressBarUI(percentage, statusText) {
+                if (progressBar) { // progressBar 是全局获取的DOM元素
+                    progressBar.style.width = `${Math.min(100, Math.max(0, percentage.toFixed(1)))}%`;
+                }
+                if (progressStatus) { // progressStatus 是全局获取的DOM元素
+                    progressStatus.textContent = statusText;
+                }
+                log(`Progress: ${percentage.toFixed(1)}% - ${statusText}`, 'info'); // 调试日志
+            }
+
             async function startConversion() { 
                 if (!selectedFile) { showCustomAlert('请先选择一个 TXT 文件，然后再开始转换。', '操作提示', 'warning'); return; }
-                const title = bookTitle?.value || '未知标题'; const author = bookAuthor?.value || '未知作者'; const language = bookLanguage?.value || 'en';
+                const title = bookTitle?.value || '未知标题'; const author = bookAuthor?.value || '未知作者'; const language = 'zh-CN';
                 const options = {
                     title, author, language,
                     chapterPattern: getChapterPatternRegex(), volumePattern: getVolumePatternRegex(),
-                    maxTitleLength: 35, unknownTitleName: '章节正文',
+                    maxTitleLength: 35, unknownTitleName: '章节',
                     indent: parseFloat(indent?.value) || 2, titleAlign: titleAlign?.value || 'center', fontFamily: 'default',
-                    fontSize: '1em', lineHeight: '1.6', paragraphSpacing: paragraphSpacing?.value || '1em'
+                    fontSize: '1em', lineHeight: '1.6', paragraphSpacing: paragraphSpacing?.value || '1em',
+                    minEmptyLinesForFallbackTitle: 2, fallbackTitleMaxLength: 20
                 };
-                log(`Starting conversion with options: ${JSON.stringify(options)}`, 'info');
                 if (uploadCard) uploadCard.style.display = 'none'; if (debugAreaDOM) debugAreaDOM.style.display = (debugMode?.value === 'on') ? 'block' : 'none'; if (progressCard) progressCard.style.display = 'block'; if (convertBtn) convertBtn.disabled = true;
-                let progress = 0; const progressInterval = setInterval(() => { 
-                    progress += Math.random() * 5 + 2; if (progress > 95 && progress < 100) progress = 95; else if (progress >= 100) progress = 99; if (progressBar) progressBar.style.width = `${progress}%`; if (progressStatus) { if (progress < 20) progressStatus.textContent = '读取和解码文本文件...'; else if (progress < 40) progressStatus.textContent = '检测章节和卷...'; else if (progress < 60) progressStatus.textContent = '格式化内容...'; else if (progress < 80) progressStatus.textContent = '创建EPUB结构...'; else progressStatus.textContent = '正在完成您的电子书...'; }
-                }, 150);
+                updateProgressBarUI(0, '正在初始化...'); 
                 try {
                     let text; if (!fileArrayBuffer && selectedFile) { log('File ArrayBuffer not found, reading file again.', 'warning'); fileArrayBuffer = await readFileAsArrayBuffer(selectedFile); } if (!fileArrayBuffer) throw new Error("无法读取文件内容。");
-                    text = await decodeText(fileArrayBuffer, detectedEncoding || 'UTF-8'); text = cleanText(text); log(`Text cleaned. Length: ${text.length} characters`);
-                    processedText = processText(text, options); log(`Text processed. Found ${countSections(processedText)} sections`);
+                    updateProgressBarUI(2, '文件读取完毕...');
+                    text = await decodeText(fileArrayBuffer, detectedEncoding || 'UTF-8');updateProgressBarUI(10, '文件解码完成...'); text = cleanText(text); text=removeMetadataLinesFromContent(text, title, author); text = "\n\n" + text;updateProgressBarUI(20, '文件内容准备就绪...');
+                    processedText = processText(text, options); updateProgressBarUI(35, `书籍结构分析完毕: 共 ${countSections(processedText)} 章节/卷`);
                     
-                    let finalCoverDataUrl = null;
+                    let finalCoverDataUrl = null;const coverProgressStart = 35; const coverProgressEnd = 45; 
                     if (coverUpload?.checked && coverFile) { 
-                        finalCoverDataUrl = await readFileAsDataURL(coverFile); 
+                        updateProgressBarUI(coverProgressStart, '正在处理本地封面...');finalCoverDataUrl = await readFileAsDataURL(coverFile); updateProgressBarUI(coverProgressEnd, '本地封面处理完毕.');
                     } else if (coverSearch?.checked && onlineCoverResults.length > 0) {
-                        const selectedQidianUrl = onlineCoverResults[currentOnlineCoverIndex];
+                        updateProgressBarUI(coverProgressStart, '正在处理在线封面...');const selectedQidianUrl = onlineCoverResults[currentOnlineCoverIndex];
                         if (selectedQidianUrl) {
                             if (selectedQidianUrl.startsWith('http')) finalCoverDataUrl = await fetchImageAsDataURL(selectedQidianUrl);
                             else if (selectedQidianUrl.startsWith('data:')) finalCoverDataUrl = selectedQidianUrl; // Should not happen for Qidian
@@ -2237,15 +2273,18 @@
                     } else if (coverSearch?.checked && coverDataUrl && !coverDataUrl.includes('placehold.co')) {
                          // Fallback for single coverDataUrl if onlineCoverResults is empty but a valid URL exists
                          if (coverDataUrl.startsWith('http')) finalCoverDataUrl = await fetchImageAsDataURL(coverDataUrl);
-                         else if (coverDataUrl.startsWith('data:')) finalCoverDataUrl = coverDataUrl;
-                    }
+                         else if (coverDataUrl.startsWith('data:')) finalCoverDataUrl = coverDataUrl;updateProgressBarUI(coverProgressEnd, '在线封面处理完毕.');
+                    } else {updateProgressBarUI(coverProgressEnd, '无封面或跳过封面处理.');}
 
-                    if (typeof JSZip === 'undefined') throw new Error('JSZip library not found.');
-                    epubBlob = await generateEpub(processedText, finalCoverDataUrl, options); log(`EPUB created successfully. Size: ${formatFileSize(epubBlob.size)}`, 'success');
-                    clearInterval(progressInterval); if (progressBar) progressBar.style.width = '100%'; if (progressStatus) progressStatus.textContent = '转换完成！';
+                    if (typeof JSZip === 'undefined') throw new Error('JSZip library not found.');const epubGenerationStartProgress = coverProgressEnd; const epubCompressionEndProgress = 95;
+                    epubBlob = await generateEpub(processedText, finalCoverDataUrl, options, (stageProgress, stageStatus) => {
+                        const overallProgress = epubGenerationStartProgress + (stageProgress / 100) * (epubCompressionEndProgress - epubGenerationStartProgress);
+                        updateProgressBarUI(overallProgress, stageStatus);
+                    }); log(`完成！. 大小为: ${formatFileSize(epubBlob.size)}`, 'success');
+                    updateProgressBarUI(100, '转换完成！');
                     setTimeout(() => { if (progressCard) progressCard.style.display = 'none'; if (resultCard) resultCard.style.display = 'block'; if (resultFileName) resultFileName.textContent = `${sanitizeFilename(title)}.epub`; if (resultFileSize) resultFileSize.textContent = formatFileSize(epubBlob.size); if (convertBtn) convertBtn.disabled = false; }, 500);
                 } catch (error) {
-                    clearInterval(progressInterval); log(`Conversion error: ${error.message}`, 'error'); showCustomAlert(`转换过程中发生错误: <br>${error.message}`, '转换失败', 'error', () => {
+                    log(`Conversion error: ${error.message}`, 'error');updateProgressBarUI(0, `转换失败: ${error.message.substring(0, 50)}...`); showCustomAlert(`转换过程中发生错误: <br>${error.message}`, '转换失败', 'error', () => {
                             // resetConverter(); // 如果 resetConverter 会清除其他状态，确保这是期望的行为
                             // 或者仅重置UI到可以重新尝试的状态
                             if (uploadCard) uploadCard.style.display = 'block';
@@ -2274,169 +2313,438 @@
             function getVolumePatternRegex() { 
                 if (!volumePattern || volumePattern.value === 'disabled') return null; switch (volumePattern.value) { case 'auto': return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)|^Volume\s+([0-9]+|[IVXLCDM]+)(\s|$)|^Book\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; case 'chinese': return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)/; case 'english': return /^(Volume|Book)\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; case 'custom': try { if (customVolumePattern?.value) return new RegExp(customVolumePattern.value, 'i'); else { log('Empty custom volume pattern, using auto-detect instead', 'warning'); return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)|^Volume\s+([0-9]+|[IVXLCDM]+)(\s|$)|^Book\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; } } catch (e) { log(`Invalid volume regex pattern: ${e.message}`, 'error'); alert('无效的自定义卷/部模式。将使用自动检测。'); return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)|^Volume\s+([0-9]+|[IVXLCDM]+)(\s|$)|^Book\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; } default: return /^第[0-9一二三四五六七八九十零〇百千两 ]+[卷部篇集](\s|$)|^Volume\s+([0-9]+|[IVXLCDM]+)(\s|$)|^Book\s+([0-9]+|[IVXLCDM]+)(\s|$)/i; }
             }
-            function cleanText(text) { 
-                log('Cleaning text...');
-                text = text.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F\uFFFE\uFFFF]/g, ''); 
-                text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n'); 
-                text = text.replace(/\uFFFD/g, ''); 
-                const junkPatterns = [ /^\s*(最新章节请到)\s*.*?\.com\s*$/gim, /^\s*(请收藏本站)\s*.*?\.com\s*$/gim, /^\s*(看最新章节)\s*.*?\.com\s*$/gim, /^\s*(手机用户请到)\s*.*?\.com\s*阅读\s*$/gim, /^\s*www\..*?\.(com|net|org)\s*$/gim, /^\s*小说来源[:：].*$/gim, /^\s*下载地址[:：].*$/gim, /^\s*本书首发来自.*$/gim, /^\s*更多精校小说尽在.*$/gim, /^\s*【本作品来自互联网.*$/gim, /^\s*------------.*$/gim, /^\s*========.*$/gim, /^\s*ps[:：].*$/gim ];
-                junkPatterns.forEach(pattern => { text = text.replace(pattern, ''); });
-                text = text.replace(/^\s*本文来自.*$/gm, ''); text = text.replace(/^\s*正文\s*$/gm, ''); text = text.replace(/^\s*序章\s*$/gm, ''); text = text.replace(/\n\s*\n/g, '\n\n'); return text.trim(); 
+            function cleanText(text) {
+                log('正在清理文本...');
+                if (!text) return "";
+
+                // 1. 移除从 "多----" 开始到 "---" 结束的整个文本块
+                //    - ^\s*-{10,}\s*$ : 匹配一个由至少10个短横线组成的行 (前后可有空白)
+                //    - [\s\S]*?       : 非贪婪匹配中间的所有字符 (包括换行符)
+                //    - ^\s*-{3,}\s*$  : 匹配一个由至少3个短横线组成的行 (作为结束标记)
+                //    - gm 标志        : 全局匹配 (移除所有此类块), 多行模式 (使^和$匹配行首尾)
+                // const blockRemovalRegex = /^\s*[-—=]{10,}\s*$[\s\S]*?^\s*[-—=]{3,}\s*$/gm;
+                // 如果上面的 [\s\S] 在某些环境下表现不佳，可以尝试使用 s (dotall) 标志，但这需要 ES2018+ 环境：
+                // const blockRemovalRegexWithSFlag = /^\s*-{10,}\s*$.*?^\s*-{3,}\s*$/gms;
+                // 为确保兼容性，我们这里使用 [\s\S]
+
+                // text = text.replace(blockRemovalRegex, '');
+                // log('Text after block removal (first 200 chars): ' + text.substring(0, 200));
+
+                // 2. 保留现有的初始字符清理步骤
+                text = text.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F\uFFFE\uFFFF]/g, '');
+                text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                text = text.replace(/\uFFFD/g, '');
+
+                // 3. 定义并应用其他逐行或特定模式的垃圾信息移除
+                // 注意：之前移除纯分隔线的模式 /^\s*[-—=]{10,}\s*$/gm 如果在 blockRemovalRegex 之后运行，
+                // 可能会清理掉一些未被块移除正确捕获的、单独存在的分隔线。
+                // 如果块移除已处理，该模式可能不再需要，或者作为补充。
+                const junkPatterns = [
+                    // 原有模式 (保留或根据需要调整)
+                    /^\s*(最新章节请到|请收藏本站|看最新章节|手机用户请到).*?\.com\s*$/gim,
+                    /^\s*www\..*?\.(com|net|org)\s*$/gim,
+                    /^\s*(小说来源|下载地址|本书首发来自|更多精校小说尽在|【本作品来自互联网|本书由).*$/gim,
+                    /^\s*ps\s*[:：].*$/gim,
+                    /^\s*小说下载尽在\s*.*?书香中文网.*?$/gim,
+                    /^\s*-+.*?《.*?校对.*?》.*?-+\s*$/gim, // 这个模式可能与上面的块移除有重叠，但可以保留以处理不同风格的校对标记
+                    /^\s*本书由\s*.*?整理上传.*?$/gim,
+                    /^\s*TXT小说下载网\s*.*?提供下载.*?$/gim,
+                    /^\s*所有资源部分转载自互联网.*?$/gim,
+                    /^\s*友情提示：.*?$/gim,
+                    /^\s*[-—=]{10,}\s*$/gm, // 移除“纯粹由分隔符组成的行”，如果它们未被块移除捕获
+                    // 您可以根据需要继续添加更多模式
+                ];
+
+                junkPatterns.forEach(pattern => {
+                    text = text.replace(pattern, '');
+                });
+
+                // 移除其他特定行
+                text = text.replace(/^\s*本文来自.*$/gm, '');
+                text = text.replace(/^\s*(正文|序章|章节目录|最新章节|作品相关|第一卷|VIP卷)\s*$/gim, '');
+                text = text.replace(/^\s*(赞助商链接|AD)\s*$/gim, '');
+
+
+                // 4. 清理因移除产生的多余空行：将多个连续换行符合并为一个，并移除开头和结尾的空白
+                text = text.replace(/\n\s*\n/g, '\n\n');
+                return text.trim();
             }
-            function processText(text, options) { 
-                 log('Processing text to detect chapters and volumes...'); const lines = text.split('\n'); const sections = []; let currentVolume = null; let currentChapter = { title: options.unknownTitleName, type: 'text', content: [] }; let hasContentSinceLastTitle = false; const chapterRegex = options.chapterPattern; const volumeRegex = options.volumePattern; const maxLen = options.maxTitleLength; for (let i = 0; i < lines.length; i++) { let line = lines[i].trim(); if (!line) continue; let isPotentialTitle = line.length <= maxLen; let isVolumeTitle = volumeRegex && volumeRegex.test(line) && isPotentialTitle; let isChapterTitle = chapterRegex && chapterRegex.test(line) && isPotentialTitle; if (isVolumeTitle) { if (hasContentSinceLastTitle && currentChapter.content.length > 0) { if (currentVolume) currentVolume.chapters.push(currentChapter); else sections.push(currentChapter); } if (currentVolume) sections.push(currentVolume); currentVolume = { title: line, type: 'volume', chapters: [] }; currentChapter = { title: options.unknownTitleName, type: 'text', content: [] }; hasContentSinceLastTitle = false; log(`New Volume: ${line}`); } else if (isChapterTitle) { if (hasContentSinceLastTitle && currentChapter.content.length > 0) { if (currentVolume) currentVolume.chapters.push(currentChapter); else sections.push(currentChapter); } currentChapter = { title: line, type: 'chapter', content: [] }; hasContentSinceLastTitle = false; log(`New Chapter: ${line}`); } else { if (line.toLowerCase().includes("本章未完") || line.toLowerCase().includes("点击下一页")) continue; if (line.startsWith("（本章完）")) continue; currentChapter.content.push(line); hasContentSinceLastTitle = true; } } if (hasContentSinceLastTitle && currentChapter.content.length > 0) { if (currentVolume) currentVolume.chapters.push(currentChapter); else sections.push(currentChapter); } if (currentVolume) sections.push(currentVolume); const finalSections = []; let chapterCounter = 1; sections.forEach(section => { if (section.type === 'volume') { if (section.chapters.length > 0) { section.chapters.forEach(chap => { if (!chap.title || chap.title === options.unknownTitleName) chap.title = `${options.unknownTitleName} ${chapterCounter++}`; chap.paragraphs = processParagraphs(chap.content); }); finalSections.push(section); } else log(`Skipping empty volume: ${section.title}`, 'warning'); } else { if (!section.title || section.title === options.unknownTitleName) section.title = `${options.unknownTitleName} ${chapterCounter++}`; section.paragraphs = processParagraphs(section.content); if (section.paragraphs.length > 0) finalSections.push(section); else log(`Skipping empty chapter: ${section.title}`, 'warning'); } }); log(`Found ${countSections(finalSections)} total sections after processing.`); return finalSections;
+            /**
+             * Processes the full text to identify volumes, chapters, and their content.
+             * Includes logic for standard chapter/volume regex matching and a fallback
+             * mechanism for titling chapters based on preceding empty lines and short first lines.
+             * @param {string} text - The full text content to process.
+             * @param {object} options - Configuration options.
+             * @returns {Array<object>} - An array of section objects (chapters or volumes).
+             */
+             function processText(text, options) {
+                log('正在处理章节和卷...');
+                const lines = text.split('\n');
+                const sections = [];
+                let currentVolume = null;
+                let currentChapter = { title: options.unknownTitleName, type: 'text', content: [] };
+                let hasContentSinceLastTitle = false; // Tracks if the currentChapter has actual content lines
+
+                const chapterRegex = options.chapterPattern;
+                const volumeRegex = options.volumePattern;
+                const standardTitleMaxLength = options.maxTitleLength || 35;
+                const fallbackTitleMinEmptyLines = options.minEmptyLinesForFallbackTitle || 2; // Default to 2 if not provided
+                const fallbackTitleMaxLength = options.fallbackTitleMaxLength || 50;         // Default to 50 if not provided
+
+                let emptyLineStreak = 0;
+
+                function finalizeCurrentChapter() {
+                    if (hasContentSinceLastTitle && currentChapter.content.length > 0) {
+                        if (currentVolume) {
+                            currentVolume.chapters.push(currentChapter);
+                        } else {
+                            sections.push(currentChapter);
+                        }
+                        return true; // Chapter was finalized
+                    }
+                    return false; // No meaningful content to finalize
+                }
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i]; // Keep original for potential pushing, trim for checks
+                    const trimmedLine = line.trim();
+
+                    if (!trimmedLine) { // Line is empty or whitespace only
+                        emptyLineStreak++;
+                        continue; // Move to the next line
+                    }
+
+                    // At this point, trimmedLine is a non-empty string
+
+                    let isPotentialStandardTitle = trimmedLine.length > 0 && trimmedLine.length <= standardTitleMaxLength;
+                    let isVolumeTitle = volumeRegex && volumeRegex.test(trimmedLine) && isPotentialStandardTitle;
+                    let isChapterTitle = chapterRegex && chapterRegex.test(trimmedLine) && isPotentialStandardTitle;
+                    let isFallbackTitleCandidate = false;
+
+                    if (!isVolumeTitle && !isChapterTitle) { // Only consider fallback if not a standard title
+                        isFallbackTitleCandidate = emptyLineStreak >= fallbackTitleMinEmptyLines &&
+                                                 trimmedLine.length > 0 &&
+                                                 trimmedLine.length <= fallbackTitleMaxLength;
+                    }
+
+                    if (isVolumeTitle) {
+                        finalizeCurrentChapter();
+                        if (currentVolume) { // Finalize previous volume if it exists
+                            sections.push(currentVolume);
+                        }
+                        currentVolume = { title: trimmedLine, type: 'volume', chapters: [] };
+                        currentChapter = { title: options.unknownTitleName, type: 'text', content: [] }; // Reset for chapters within new volume
+                        hasContentSinceLastTitle = false;
+                    } else if (isChapterTitle) {
+                        finalizeCurrentChapter();
+                        currentChapter = { title: trimmedLine, type: 'chapter', content: [] };
+                        hasContentSinceLastTitle = false;
+                    } else if (isFallbackTitleCandidate) {
+                        let potentialTitle = trimmedLine;
+                        // Remove trailing colon if present (Chinese or English)
+                        if (potentialTitle.endsWith(':') || potentialTitle.endsWith('：')) {
+                            potentialTitle = potentialTitle.slice(0, -1).trim();
+                        }
+
+                        if (potentialTitle.length > 0) { // Ensure title is still valid
+                            finalizeCurrentChapter();
+                            currentChapter = { title: potentialTitle, type: 'chapter', content: [] };
+                            hasContentSinceLastTitle = false;
+                            log(`New Chapter (Fallback Heuristic after ${emptyLineStreak} empty lines): ${potentialTitle}`);
+                        } else {
+                            // Line became empty after removing colon, or was just a colon. Treat as content or skip.
+                            // For simplicity, we'll let it fall through to be added as content if it's not filtered out.
+                            if (trimmedLine.length > 0) { // Push the original trimmed line (with colon if it was just a colon)
+                                currentChapter.content.push(trimmedLine); // Add the original line
+                                hasContentSinceLastTitle = true;
+                            }
+                        }
+                    } else {
+                        // Line is content
+                        // Filter out common "end of chapter" markers or other noise before adding to content
+                        if (trimmedLine.toLowerCase().includes("本章未完") || trimmedLine.toLowerCase().includes("点击下一页")) {
+                            // Skip this line
+                        } else if (trimmedLine.startsWith("（本章完）")) {
+                            // Skip this line
+                        } else {
+                            currentChapter.content.push(line); // Push the original line with its leading/trailing spaces if desired, or trimmedLine
+                            hasContentSinceLastTitle = true;
+                        }
+                    }
+                    emptyLineStreak = 0; // Reset for any non-empty line processed
+                }
+
+                // After the loop, finalize the last chapter/volume
+                finalizeCurrentChapter();
+                if (currentVolume) { // If a volume was being processed, add it
+                    sections.push(currentVolume);
+                }
+
+                // Post-processing to assign default titles to unnamed chapters and process paragraphs
+                const finalSections = [];
+                let chapterCounter = 1; // Used for fallback chapter numbering if a title is still unknownTitleName
+
+                sections.forEach(section => {
+                    if (section.type === 'volume') {
+                        if (section.chapters && section.chapters.length > 0) {
+                            section.chapters.forEach(chap => {
+                                if (!chap.title || chap.title === options.unknownTitleName) {
+                                    chap.title = `${options.unknownTitleName} ${chapterCounter++}`;
+                                }
+                                chap.paragraphs = processParagraphs(chap.content); // Process paragraphs for each chapter
+                            });
+                            finalSections.push(section);
+                        } else {
+                            log(`Skipping empty volume: ${section.title}`, 'warning');
+                        }
+                    } else { // It's a chapter directly under sections
+                        if (!section.title || section.title === options.unknownTitleName) {
+                            section.title = `${options.unknownTitleName} ${chapterCounter++}`;
+                        }
+                        section.paragraphs = processParagraphs(section.content); // Process paragraphs
+                        if (section.paragraphs.length > 0 || section.title !== `${options.unknownTitleName} ${chapterCounter-1}`) { // Keep if it has content or a meaningful title
+                           finalSections.push(section);
+                        } else {
+                            log(`Skipping empty chapter or chapter with default name and no content: ${section.title}`, 'warning');
+                        }
+                    }
+                });
+
+                return finalSections;
             }
+
             function countSections(sections) { 
                 let count = 0; for (let i = 0; i < sections.length; i++) { if (sections[i].type === 'volume') count += 1 + sections[i].chapters.length; else count++; } return count;
             }
+            /**
+             * 将文本行处理成段落。
+             * 如果一行以终止性标点符号结尾，则当前段落结束。
+             * 否则，该行将与后续行合并，直到遇到终止性标点、空行或文本末尾。
+             * @param {string[]} lines - 输入的文本行数组。
+             * @returns {string[]} - 处理后的段落数组。
+             */
             function processParagraphs(lines) { 
-                const paragraphs = []; if (!lines) return paragraphs; for (let i = 0; i < lines.length; i++) { if (lines[i].trim()) paragraphs.push(lines[i].trim()); } return paragraphs;
+                if (!lines || lines.length === 0) return []; const paragraphs = [];  let currentParagraphLines = []; const terminatingPunctuationRegex = /[。！…：\.!\?”]$/u; for (let i = 0; i < lines.length; i++) { const line = lines[i].trim(); if (line === "") {if (currentParagraphLines.length > 0) {paragraphs.push(currentParagraphLines.join('')); currentParagraphLines = []} continue; } currentParagraphLines.push(line); if (terminatingPunctuationRegex.test(line)) { paragraphs.push(currentParagraphLines.join('')); currentParagraphLines = [];}} if(currentParagraphLines.length>0) paragraphs.push(currentParagraphLines.join('')); return paragraphs; 
             }
-            async function generateEpub(sections, coverImageDataUrl, options) { 
-                log('Generating EPUB file...'); 
-                try { 
-                    if (typeof JSZip === 'undefined') throw new Error('JSZip library not found'); 
-                    const zip = new JSZip(); 
-                    zip.file('mimetype', 'application/epub+zip', {compression: "STORE"}); 
-                    const metaInf = zip.folder('META-INF'); 
-                    metaInf.file('container.xml', '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>'); 
-                    const oebps = zip.folder('OEBPS'); 
-                    const imagesFolder = oebps.folder('images'); 
-                    const fontFamilyCSS = getFontFamilyCSS(options.fontFamily); 
-                    const titleAlignCSS = `text-align: ${options.titleAlign};`; 
-                    const indentVal = `${options.indent}em`; 
-                    const styleContent = `body { ${fontFamilyCSS} margin: 20px; line-height: ${options.lineHeight}; font-size: ${options.fontSize};} h1, h2, h3 { margin-top: 1.5em; margin-bottom: 0.8em; font-weight: bold; ${titleAlignCSS} } h1 { font-size: 2em; } h2 { font-size: 1.6em; } h3 { font-size: 1.3em; } p { text-indent: ${indentVal}; margin: 0 0 ${options.paragraphSpacing} 0; hyphens: auto; text-align: justify; } p.no-indent { text-indent: 0; } .title-page .book-title { font-size: 2.5em; margin-bottom: 0.5em; ${titleAlignCSS} } .title-page .author { font-size: 1.5em; margin-bottom: 3em; ${titleAlignCSS} font-style: italic; } .cover-page img { max-width: 100%; height: auto; display: block; margin: 0 auto; max-height: 95vh; } .volume-title { page-break-before: always; margin-top: 3em; } .chapter-title { page-break-before: always; margin-top: 2em; } .special-title { font-style: italic; } nav ol { list-style-type: none; padding-left: 0; } nav ol ol { padding-left: 1.5em; } nav a { text-decoration: none; color: var(--primary-color, #4361ee); } nav a:hover { text-decoration: underline; } @media amzn-kf8 { body { font-family: "Amazon Ember", "Bookerly", serif; } p { text-align: justify; -webkit-hyphens: auto; -moz-hyphens: auto; hyphens: auto; } } @media amzn-mobi { body { font-family: serif; } p { text-align: left; } }`; 
-                    oebps.file('stylesheet.css', styleContent); 
-                    const uuid = 'urn:uuid:' + generateUUID(); 
-                    let coverImagePath = null; 
-                    let coverImageType = 'image/jpeg'; 
-                    if (coverImageDataUrl?.startsWith('data:')) { 
-                        const match = coverImageDataUrl.match(/^data:(image\/(?:png|jpeg|gif|webp|svg\+xml));base64,(.+)$/); 
-                        if (match?.[1] && match?.[2]) { 
-                            coverImageType = match[1]; 
-                            const base64Data = match[2]; 
-                            const ext = coverImageType.split('/')[1].replace('svg+xml', 'svg') || 'jpg'; 
-                            coverImagePath = `images/cover.${ext}`; 
-                            imagesFolder.file(`cover.${ext}`, base64Data, {base64: true}); 
-                            log(`Cover image added: ${coverImagePath} (Type: ${coverImageType})`); 
-                        } else {
-                            log(`Invalid cover image data URL format: ${coverImageDataUrl.substring(0,100)}... Skipping cover.`, 'warning');
-                        }
-                    } else if (coverImageDataUrl) {
-                        log(`Cover image data is not a Data URL (possibly due to fetch error). Skipping cover. URL: ${coverImageDataUrl.substring(0,100)}`, 'warning');
+            async function generateEpub(sections, coverImageDataUrl, options, progressCallback) {
+                try {
+                    if (typeof JSZip === 'undefined') {
+                        progressCallback(0, 'Error: JSZip library not found.');
+                        throw new Error('JSZip library not found');
                     }
-                    oebps.file('title.xhtml', `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(options.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body class="title-page"><div id="title_page_main" class="book-title">${escapeXML(options.title)}</div><div class="author">${escapeXML(options.author)}</div></body></html>`); 
-                    if (coverImagePath) {
-                        oebps.file('cover.xhtml', `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>Cover</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body class="cover-page"><div id="cover_image_container"><img src="${coverImagePath}" alt="Cover Image" /></div></body></html>`);
-                    }
-                    
-                    let manifestItems = ''; 
-                    let spineItems = ''; 
-                    const navDocLinks = []; 
-                    let ncxNavPoints = ''; 
-                    let playOrder = 1; 
+                    progressCallback(0, '正在初始化 EPUB 生成器...'); // generateEpub 内部进度 0%
 
-                    if (coverImagePath) { 
-                        manifestItems += `<item id="cover-img" href="${coverImagePath}" media-type="${coverImageType}" properties="cover-image"/>\n`; 
-                        manifestItems += `<item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>\n`; 
-                        spineItems += `<itemref idref="cover-page" linear="yes"/>\n`; 
-                    } 
-                    manifestItems += `<item id="title-page" href="title.xhtml" media-type="application/xhtml+xml"/>\n`; 
-                    spineItems += `<itemref idref="title-page"/>\n`; 
-                    navDocLinks.push({ title: '书名页', href: `title.xhtml#title_page_main`, level: 1 }); 
-                    ncxNavPoints += `<navPoint id="navpoint-${playOrder}" playOrder="${playOrder++}"><navLabel><text>书名页</text></navLabel><content src="title.xhtml#title_page_main"/></navPoint>\n`; 
-                    manifestItems += `<item id="css" href="stylesheet.css" media-type="text/css"/>\n`; 
-                    
-                    sections.forEach((section, sectionIndex) => { 
-                        const sectionBaseId = `s_${sectionIndex + 1}`; 
-                        if (section.type === 'volume') { 
-                            const volumeAnchorId = `${sectionBaseId}_vol_title`; 
-                            const volumeFilename = `${sectionBaseId}_vol.xhtml`; 
-                            let volumePageContent = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(section.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body><h1 id="${volumeAnchorId}" class="volume-title" epub:type="volume z3998:roman">${escapeXML(section.title)}</h1></body></html>`; 
-                            oebps.file(volumeFilename, volumePageContent); 
-                            manifestItems += `<item id="${sectionBaseId}-vol" href="${volumeFilename}" media-type="application/xhtml+xml"/>\n`; 
-                            spineItems += `<itemref idref="${sectionBaseId}-vol"/>\n`; 
-                            const volumeNavEntry = { title: escapeXML(section.title), href: `${volumeFilename}#${volumeAnchorId}`, level: 1, children: [] }; 
-                            navDocLinks.push(volumeNavEntry); 
+                    const zip = new JSZip();
+                    // 1. MIMETYPE
+                    zip.file('mimetype', 'application/epub+zip', { compression: "STORE" });
+
+                    // 2. META-INF/container.xml
+                    const metaInf = zip.folder('META-INF');
+                    metaInf.file('container.xml', '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>');
+
+                    const oebps = zip.folder('OEBPS');
+                    const imagesFolder = oebps.folder('images'); // Create images folder early
+
+                    progressCallback(5, 'EPUB 核心结构已创建...'); // 内部进度 5%
+
+                    // 3. OEBPS/stylesheet.css
+                    const fontFamilyCSS = getFontFamilyCSS(options.fontFamily); // Assumes getFontFamilyCSS is defined
+                    const titleAlignCSS = `text-align: ${options.titleAlign};`;
+                    const indentVal = `${options.indent}em`;
+                    const styleContent = `body { ${fontFamilyCSS} margin: 20px; line-height: ${options.lineHeight}; font-size: ${options.fontSize};} h1, h2, h3 { margin-top: 1.5em; margin-bottom: 0.8em; font-weight: bold; ${titleAlignCSS} } h1 { font-size: 2em; } h2 { font-size: 1.6em; } h3 { font-size: 1.3em; } p { text-indent: ${indentVal}; margin: 0 0 ${options.paragraphSpacing} 0; hyphens: auto; text-align: justify; } p.no-indent { text-indent: 0; } .title-page .book-title { font-size: 2.5em; margin-bottom: 0.5em; ${titleAlignCSS} } .title-page .author { font-size: 1.5em; margin-bottom: 3em; ${titleAlignCSS} font-style: italic; } .cover-page img { max-width: 100%; height: auto; display: block; margin: 0 auto; max-height: 95vh; } .volume-title { page-break-before: always; margin-top: 3em; } .chapter-title { page-break-before: always; margin-top: 2em; } .special-title { font-style: italic; } nav ol { list-style-type: none; padding-left: 0; } nav ol ol { padding-left: 1.5em; } nav a { text-decoration: none; color: var(--primary-color, #4361ee); } nav a:hover { text-decoration: underline; } @media amzn-kf8 { body { font-family: "Amazon Ember", "Bookerly", serif; } p { text-align: justify; -webkit-hyphens: auto; -moz-hyphens: auto; hyphens: auto; } } @media amzn-mobi { body { font-family: serif; } p { text-align: left; } }`;
+                    oebps.file('stylesheet.css', styleContent);
+
+                    // 4. OEBPS/title.xhtml
+                    oebps.file('title.xhtml', `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(options.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body class="title-page"><div id="title_page_main" class="book-title">${escapeXML(options.title)}</div><div class="author">${escapeXML(options.author)}</div></body></html>`);
+
+                    // 5. Cover Image and OEBPS/cover.xhtml (if cover exists)
+                    let coverImagePath = null;
+                    let coverImageType = 'image/jpeg'; // Default
+                    if (coverImageDataUrl?.startsWith('data:')) {
+                        const match = coverImageDataUrl.match(/^data:(image\/(?:png|jpeg|gif|webp|svg\+xml));base64,(.+)$/);
+                        if (match?.[1] && match?.[2]) {
+                            coverImageType = match[1];
+                            const base64Data = match[2];
+                            const ext = coverImageType.split('/')[1].replace('svg+xml', 'svg') || 'jpg';
+                            coverImagePath = `images/cover.${ext}`;
+                            imagesFolder.file(`cover.${ext}`, base64Data, { base64: true });
+                            log(`Cover image added: ${coverImagePath} (Type: ${coverImageType})`);
+                            oebps.file('cover.xhtml', `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>Cover</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body class="cover-page"><div id="cover_image_container"><img src="${coverImagePath}" alt="Cover Image" /></div></body></html>`);
+                        } else {
+                            log(`Invalid cover image data URL format: ${coverImageDataUrl.substring(0, 100)}... Skipping cover.`, 'warning');
+                        }
+                    } else if (coverImageDataUrl) { // This case might occur if fetchImageAsDataURL returned null or a non-dataURL string
+                        log(`Cover image data is not a Data URL. Skipping cover. URL (or part of it): ${String(coverImageDataUrl).substring(0, 100)}`, 'warning');
+                    }
+
+                    progressCallback(10, '基础 EPUB 页面已生成...'); // 内部进度 10%
+
+                    // Initialize for manifest, spine, nav, ncx
+                    const uuid = 'urn:uuid:' + generateUUID(); // Assumes generateUUID is defined
+                    let manifestItems = '';
+                    let spineItems = '';
+                    const navDocLinks = [];
+                    let ncxNavPoints = '';
+                    let playOrder = 1;
+
+                    // Add cover to manifest and spine (if exists)
+                    if (coverImagePath) {
+                        manifestItems += `<item id="cover-img" href="${coverImagePath}" media-type="${coverImageType}" properties="cover-image"/>\n`;
+                        manifestItems += `<item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>\n`;
+                        spineItems += `<itemref idref="cover-page" linear="yes"/>\n`; // Some readers prefer 'linear="yes"' for the cover
+                    }
+
+                    // Add title page
+                    manifestItems += `<item id="title-page" href="title.xhtml" media-type="application/xhtml+xml"/>\n`;
+                    spineItems += `<itemref idref="title-page"/>\n`;
+                    navDocLinks.push({ title: '书名页', href: `title.xhtml#title_page_main`, level: 1 });
+                    ncxNavPoints += `<navPoint id="navpoint-${playOrder}" playOrder="${playOrder++}"><navLabel><text>书名页</text></navLabel><content src="title.xhtml#title_page_main"/></navPoint>\n`;
+
+                    // Add CSS
+                    manifestItems += `<item id="css" href="stylesheet.css" media-type="text/css"/>\n`;
+
+                    // --- Content Chapters/Volumes Processing ---
+                    // This section will contribute from 10% to 70% of generateEpub's internal progress.
+                    const chapterProcessingStartInternalProgress = 10;
+                    const chapterProcessingTotalInternalWeight = 60; // 60% of internal progress for content files
+
+                    // Calculate total number of "content units" (each volume title page + each chapter page) for progress calculation
+                    let totalContentUnits = 0;
+                    sections.forEach(section => {
+                        totalContentUnits++; // For the section itself (either a chapter or a volume title)
+                        if (section.type === 'volume') {
+                            totalContentUnits += section.chapters.length; // For each chapter within the volume
+                        }
+                    });
+                    if (totalContentUnits === 0) totalContentUnits = 1; // Avoid division by zero if sections is empty
+
+                    let contentUnitsProcessed = 0;
+
+                    sections.forEach((section, sectionIndex) => {
+                        const sectionBaseId = `s_${sectionIndex + 1}`;
+
+                        if (section.type === 'volume') {
+                            const volumeAnchorId = `${sectionBaseId}_vol_title`;
+                            const volumeFilename = `${sectionBaseId}_vol.xhtml`;
+                            let volumePageContent = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(section.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body><h1 id="${volumeAnchorId}" class="volume-title" epub:type="volume z3998:roman">${escapeXML(section.title)}</h1></body></html>`;
+                            oebps.file(volumeFilename, volumePageContent);
+                            manifestItems += `<item id="${sectionBaseId}-vol" href="${volumeFilename}" media-type="application/xhtml+xml"/>\n`;
+                            spineItems += `<itemref idref="${sectionBaseId}-vol"/>\n`;
+                            const volumeNavEntry = { title: escapeXML(section.title), href: `${volumeFilename}#${volumeAnchorId}`, level: 1, children: [] };
+                            navDocLinks.push(volumeNavEntry);
                             let currentVolumeNcxNavPoint = `<navPoint id="navpoint-${playOrder}" playOrder="${playOrder++}"><navLabel><text>${escapeXML(section.title)}</text></navLabel><content src="${volumeFilename}#${volumeAnchorId}"/>`;
                             let volumeNcxChildren = '';
-                            section.chapters.forEach((chapter, chapterIndex) => { 
-                                const chapterAnchorId = `${sectionBaseId}_ch${chapterIndex + 1}_title`; 
-                                const chapterFilename = `${sectionBaseId}_ch${chapterIndex + 1}.xhtml`; 
-                                let chapterHtml = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(chapter.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body><h2 id="${chapterAnchorId}" class="chapter-title ${chapter.type === 'special' ? 'special-title' : ''}" epub:type="chapter ${chapter.type === 'special' ? 'z3998:credits' : ''}">${escapeXML(chapter.title)}</h2>`; 
-                                chapter.paragraphs.forEach(p => { chapterHtml += `<p>${escapeXML(p)}</p>\n`; }); 
-                                chapterHtml += `</body></html>`; 
-                                oebps.file(chapterFilename, chapterHtml); 
-                                manifestItems += `<item id="${sectionBaseId}-ch${chapterIndex + 1}" href="${chapterFilename}" media-type="application/xhtml+xml"/>\n`; 
-                                spineItems += `<itemref idref="${sectionBaseId}-ch${chapterIndex + 1}"/>\n`; 
-                                volumeNavEntry.children.push({ title: escapeXML(chapter.title), href: `${chapterFilename}#${chapterAnchorId}`, level: 2 }); 
-                                volumeNcxChildren += `<navPoint id="navpoint-${playOrder}" playOrder="${playOrder++}"><navLabel><text>${escapeXML(chapter.title)}</text></navLabel><content src="${chapterFilename}#${chapterAnchorId}"/></navPoint>\n`; 
-                            }); 
+
+                            contentUnitsProcessed++;
+                            const currentProgressWithinLoop = chapterProcessingStartInternalProgress + (contentUnitsProcessed / totalContentUnits) * chapterProcessingTotalInternalWeight;
+                            progressCallback(currentProgressWithinLoop, `正在生成卷: ${escapeXML(section.title).substring(0, 30)}...`);
+
+                            section.chapters.forEach((chapter, chapterIndex) => {
+                                const chapterAnchorId = `${sectionBaseId}_ch${chapterIndex + 1}_title`;
+                                const chapterFilename = `${sectionBaseId}_ch${chapterIndex + 1}.xhtml`;
+                                let chapterHtml = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(chapter.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body><h2 id="${chapterAnchorId}" class="chapter-title ${chapter.type === 'special' ? 'special-title' : ''}" epub:type="chapter ${chapter.type === 'special' ? 'z3998:credits' : ''}">${escapeXML(chapter.title)}</h2>`;
+                                chapter.paragraphs.forEach(p => { chapterHtml += `<p>${escapeXML(p)}</p>\n`; });
+                                chapterHtml += `</body></html>`;
+                                oebps.file(chapterFilename, chapterHtml);
+                                manifestItems += `<item id="${sectionBaseId}-ch${chapterIndex + 1}" href="${chapterFilename}" media-type="application/xhtml+xml"/>\n`;
+                                spineItems += `<itemref idref="${sectionBaseId}-ch${chapterIndex + 1}"/>\n`;
+                                volumeNavEntry.children.push({ title: escapeXML(chapter.title), href: `${chapterFilename}#${chapterAnchorId}`, level: 2 });
+                                volumeNcxChildren += `<navPoint id="navpoint-${playOrder}" playOrder="${playOrder++}"><navLabel><text>${escapeXML(chapter.title)}</text></navLabel><content src="${chapterFilename}#${chapterAnchorId}"/></navPoint>\n`;
+
+                                contentUnitsProcessed++;
+                                const currentProgressWithinChapterLoop = chapterProcessingStartInternalProgress + (contentUnitsProcessed / totalContentUnits) * chapterProcessingTotalInternalWeight;
+                            });
                             currentVolumeNcxNavPoint += volumeNcxChildren + `</navPoint>\n`;
                             ncxNavPoints += currentVolumeNcxNavPoint;
-                        } else { 
-                            const chapterAnchorId = `${sectionBaseId}_title`; 
-                            const chapterFilename = `${sectionBaseId}.xhtml`; 
-                            let chapterHtml = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(section.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body><h2 id="${chapterAnchorId}" class="chapter-title ${section.type === 'special' ? 'special-title' : ''}" epub:type="chapter ${section.type === 'special' ? 'z3998:credits' : ''}">${escapeXML(section.title)}</h2>`; 
-                            section.paragraphs.forEach(p => { chapterHtml += `<p>${escapeXML(p)}</p>\n`; }); 
-                            chapterHtml += `</body></html>`; 
-                            oebps.file(chapterFilename, chapterHtml); 
-                            manifestItems += `<item id="${sectionBaseId}" href="${chapterFilename}" media-type="application/xhtml+xml"/>\n`; 
-                            spineItems += `<itemref idref="${sectionBaseId}"/>\n`; 
-                            navDocLinks.push({ title: escapeXML(section.title), href: `${chapterFilename}#${chapterAnchorId}`, level: 1 }); 
-                            ncxNavPoints += `<navPoint id="navpoint-${playOrder}" playOrder="${playOrder++}"><navLabel><text>${escapeXML(section.title)}</text></navLabel><content src="${chapterFilename}#${chapterAnchorId}"/></navPoint>\n`; 
-                        } 
-                    }); 
+                        } else { // Section is a chapter
+                            const chapterAnchorId = `${sectionBaseId}_title`;
+                            const chapterFilename = `${sectionBaseId}.xhtml`;
+                            let chapterHtml = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(section.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body><h2 id="${chapterAnchorId}" class="chapter-title ${section.type === 'special' ? 'special-title' : ''}" epub:type="chapter ${section.type === 'special' ? 'z3998:credits' : ''}">${escapeXML(section.title)}</h2>`;
+                            section.paragraphs.forEach(p => { chapterHtml += `<p>${escapeXML(p)}</p>\n`; });
+                            chapterHtml += `</body></html>`;
+                            oebps.file(chapterFilename, chapterHtml);
+                            manifestItems += `<item id="${sectionBaseId}" href="${chapterFilename}" media-type="application/xhtml+xml"/>\n`;
+                            spineItems += `<itemref idref="${sectionBaseId}"/>\n`;
+                            navDocLinks.push({ title: escapeXML(section.title), href: `${chapterFilename}#${chapterAnchorId}`, level: 1 });
+                            ncxNavPoints += `<navPoint id="navpoint-${playOrder}" playOrder="${playOrder++}"><navLabel><text>${escapeXML(section.title)}</text></navLabel><content src="${chapterFilename}#${chapterAnchorId}"/></navPoint>\n`;
 
-                    // Calculate maxNavDepth for NCX
+                            contentUnitsProcessed++;
+                            const currentProgressWithinLoop = chapterProcessingStartInternalProgress + (contentUnitsProcessed / totalContentUnits) * chapterProcessingTotalInternalWeight;
+                        }
+                    });
+                    progressCallback(chapterProcessingStartInternalProgress + chapterProcessingTotalInternalWeight, '所有内容文件已生成.'); // At 70% of internal progress
+
+                    // --- Navigation Files (nav.xhtml, toc.ncx) and content.opf ---
+                    // This section from 70% to 80% of internal progress
+                    // OEBPS/nav.xhtml (EPUB 3 Table of Contents)
+                    let navDocHtml = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><title>Table of Contents</title><meta charset="utf-8"/><link rel="stylesheet" type="text/css" href="stylesheet.css"/></head><body><nav epub:type="toc" id="toc"><h1>目录</h1><ol>`;
+                    navDocLinks.forEach(item => {
+                        navDocHtml += `<li><a href="${item.href}">${item.title}</a>`;
+                        if (item.children?.length > 0) {
+                            navDocHtml += `<ol>`;
+                            item.children.forEach(child => {
+                                navDocHtml += `<li><a href="${child.href}">${child.title}</a></li>\n`;
+                            });
+                            navDocHtml += `</ol>`;
+                        }
+                        navDocHtml += `</li>\n`;
+                    });
+                    navDocHtml += `</ol></nav><nav epub:type="landmarks" hidden="hidden"><h2>Landmarks</h2><ol>`;
+                    if (coverImagePath) navDocHtml += `<li><a epub:type="cover" href="cover.xhtml#cover_image_container">封面</a></li>\n`;
+                    const firstContentItem = navDocLinks.find(item => item.href?.includes("_vol.xhtml#") || item.href?.includes("_ch") || (item.href?.includes("s_") && !item.href.startsWith("title.xhtml")));
+                    const bodyMatterHref = firstContentItem ? firstContentItem.href : (navDocLinks.length > 1 && !navDocLinks[1].href.startsWith("title.xhtml") ? navDocLinks[1].href : (navDocLinks.length > 0 && !navDocLinks[0].href.startsWith("title.xhtml") ? navDocLinks[0].href : "title.xhtml#title_page_main"));
+                    navDocHtml += `<li><a epub:type="bodymatter" href="${bodyMatterHref}">开始阅读</a></li>\n`;
+                    navDocHtml += `<li><a epub:type="toc" href="nav.xhtml#toc">目录</a></li>\n`;
+                    navDocHtml += `</ol></nav></body></html>`;
+                    oebps.file('nav.xhtml', navDocHtml);
+                    manifestItems += `<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>\n`;
+
+                    // OEBPS/toc.ncx (EPUB 2 Table of Contents)
                     let maxNavDepth = 0;
                     navDocLinks.forEach(item => {
                         if (item.level > maxNavDepth) maxNavDepth = item.level;
                         if (item.children && item.children.length > 0) {
-                            item.children.forEach(child => {
-                                if (child.level > maxNavDepth) maxNavDepth = child.level;
-                            });
+                            item.children.forEach(child => { if (child.level > maxNavDepth) maxNavDepth = child.level; });
                         }
                     });
-                    if (maxNavDepth === 0 && navDocLinks.length > 0) maxNavDepth = 1; // Ensure depth is at least 1 if there are any links
+                    if (maxNavDepth === 0 && navDocLinks.length > 0) maxNavDepth = 1;
 
+                    const ncxContent = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="${uuid}"/><meta name="dtb:depth" content="${maxNavDepth}"/><meta name="dtb:totalPageCount" content="0"/><meta name="dtb:maxPageNumber" content="0"/></head><docTitle><text>${escapeXML(options.title)}</text></docTitle><navMap>${ncxNavPoints}</navMap></ncx>`;
+                    oebps.file('toc.ncx', ncxContent);
+                    manifestItems += `<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n`;
 
-                    let navDocHtml = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><title>Table of Contents</title><meta charset="utf-8"/><link rel="stylesheet" type="text/css" href="stylesheet.css"/></head><body><nav epub:type="toc" id="toc"><h1>目录</h1><ol>`; 
-                    navDocLinks.forEach(item => { 
-                        navDocHtml += `<li><a href="${item.href}">${item.title}</a>`; 
-                        if (item.children?.length > 0) { 
-                            navDocHtml += `<ol>`; 
-                            item.children.forEach(child => { 
-                                navDocHtml += `<li><a href="${child.href}">${child.title}</a></li>\n`; 
-                            }); 
-                            navDocHtml += `</ol>`; 
-                        } 
-                        navDocHtml += `</li>\n`; 
-                    }); 
-                    navDocHtml += `</ol></nav><nav epub:type="landmarks" hidden="hidden"><h2>Landmarks</h2><ol>`; 
-                    if (coverImagePath) navDocHtml += `<li><a epub:type="cover" href="cover.xhtml#cover_image_container">封面</a></li>\n`; 
-                    const firstContentItem = navDocLinks.find(item => item.href?.includes("_vol.xhtml#") || item.href?.includes("_ch") || item.href?.includes("s_") && !item.href.startsWith("title.xhtml")); 
-                    const bodyMatterHref = firstContentItem ? firstContentItem.href : (navDocLinks.length > 1 && !navDocLinks[1].href.startsWith("title.xhtml") ? navDocLinks[1].href : (navDocLinks.length > 0 && !navDocLinks[0].href.startsWith("title.xhtml") ? navDocLinks[0].href : "title.xhtml#title_page_main" ) );
-                    navDocHtml += `<li><a epub:type="bodymatter" href="${bodyMatterHref}">开始阅读</a></li>\n`; 
-                    navDocHtml += `<li><a epub:type="toc" href="nav.xhtml#toc">目录</a></li>\n`; 
-                    navDocHtml += `</ol></nav></body></html>`; 
-                    oebps.file('nav.xhtml', navDocHtml); 
-                    manifestItems += `<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>\n`; 
-                    
-                    // Use dynamic maxNavDepth here
-                    const ncxContent = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="${uuid}"/><meta name="dtb:depth" content="${maxNavDepth}"/><meta name="dtb:totalPageCount" content="0"/><meta name="dtb:maxPageNumber" content="0"/></head><docTitle><text>${escapeXML(options.title)}</text></docTitle><navMap>${ncxNavPoints}</navMap></ncx>`; 
-                    oebps.file('toc.ncx', ncxContent); 
-                    manifestItems += `<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n`; 
-                    
-                    const contentOpf = `<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${escapeXML(options.title)}</dc:title><dc:creator id="creator">${escapeXML(options.author)}</dc:creator><dc:language>${options.language}</dc:language><dc:identifier id="BookId">${uuid}</dc:identifier><meta property="dcterms:modified">${new Date().toISOString().split('.')[0]+"Z"}</meta>${coverImagePath ? '<meta name="cover" content="cover-img"/>' : ''}</metadata><manifest>${manifestItems}</manifest><spine toc="ncx">${spineItems}</spine></package>`; 
-                    oebps.file('content.opf', contentOpf); 
-                    const epubData = await zip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip', compression: 'DEFLATE', compressionOptions: { level: 9 } }); 
-                    log('EPUB blob generated.', 'success'); 
-                    return epubData; 
-                } catch (error) { 
-                    log(`Error generating EPUB: ${error.message}`, 'error'); 
-                    console.error("EPUB Generation Error Details:", error); 
-                    throw error; 
+                    // OEBPS/content.opf
+                    const contentOpf = `<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${escapeXML(options.title)}</dc:title><dc:creator id="creator">${escapeXML(options.author)}</dc:creator><dc:language>${options.language}</dc:language><dc:identifier id="BookId">${uuid}</dc:identifier><meta property="dcterms:modified">${new Date().toISOString().split('.')[0] + "Z"}</meta>${coverImagePath ? '<meta name="cover" content="cover-img"/>' : ''}</metadata><manifest>${manifestItems}</manifest><spine toc="ncx">${spineItems}</spine></package>`;
+                    oebps.file('content.opf', contentOpf);
+
+                    progressCallback(80, 'EPUB 导航及元数据已完成.'); // At 80% of internal progress
+
+                    // --- Zipping Phase ---
+                    // This section from 80% to 100% of internal progress
+                    const compressionPhaseStartInternalProgress = 80;
+                    const compressionPhaseTotalInternalWeight = 20; // 20% of internal progress for zipping
+                    progressCallback(compressionPhaseStartInternalProgress, '准备压缩 EPUB 文件...');
+
+                    const epubData = await zip.generateAsync(
+                        { type: 'blob', mimeType: 'application/epub+zip', compression: 'DEFLATE', compressionOptions: { level: 9 } },
+                        (metadata) => { // JSZip's onUpdate callback
+                            const zipSpecificProgress = metadata.percent; // 0-100 for zipping itself
+                            const currentCompressionProgress = (zipSpecificProgress / 100) * compressionPhaseTotalInternalWeight;
+                            
+                        }
+                    );
+
+                    progressCallback(100, 'EPUB 文件压缩完毕.'); // generateEpub internal progress 100%
+                    return epubData;
+
+                } catch (error) {
+                    log(`Error generating EPUB: ${error.message}`, 'error');
+                    console.error("EPUB Generation Error Details:", error);
+                    // Report error via progress callback if it's available
+                    if (progressCallback && typeof progressCallback === 'function') {
+                        progressCallback(0, `EPUB 生成错误: ${error.message.substring(0, 70)}...`);
+                    }
+                    throw error; // Re-throw the error so startConversion's catch block can handle it
                 }
             }
             
@@ -2460,10 +2768,219 @@
                 if (bytes === 0) return '0 Bytes'; const k = 1024; const sizes = ['Bytes', 'KB', 'MB', 'GB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
             function extractTitleAuthor(filename) { 
-                log(`Extracting title/author from filename: ${filename}`); let name = filename.replace(/\.txt$/i, ''); const chineseTitleAuthorPattern = /《([^》]+)》[^作者]*作者[：:]\s*([^.]+)(?:\.txt)?$/; const chineseMatch = name.match(chineseTitleAuthorPattern); if (chineseMatch) { if (bookTitle) bookTitle.value = chineseMatch[1].trim(); if (chineseMatch[2] && bookAuthor) bookAuthor.value = chineseMatch[2].trim(); log(`Extracted title: "${bookTitle.value}" and author: "${bookAuthor?.value || 'N/A'}"`); return; } const englishTitleAuthorPattern = /(.+?)(?:\s+-\s+|\s+by\s+)(.+)/i; const englishMatch = name.match(englishTitleAuthorPattern); if (englishMatch) { if (bookTitle) bookTitle.value = englishMatch[1].trim(); if (bookAuthor) bookAuthor.value = englishMatch[2].trim(); log(`Extracted title: "${bookTitle?.value || 'N/A'}" and author: "${bookAuthor?.value || 'N/A'}"`); return; } if (bookTitle) bookTitle.value = name.trim(); if (bookAuthor) bookAuthor.value = ''; log(`Using filename as title: "${bookTitle?.value || 'N/A'}", author cleared.`);
+                let name = filename.replace(/\.txt$/i, ''); const chineseTitleAuthorPattern = /《([^》]+)》[^作者]*作者[：:]\s*([^.]+)(?:\.txt)?$/; const chineseMatch = name.match(chineseTitleAuthorPattern); if (chineseMatch) { if (bookTitle) bookTitle.value = chineseMatch[1].trim(); if (chineseMatch[2] && bookAuthor) bookAuthor.value = chineseMatch[2].trim(); log(`解析到标题: "${bookTitle.value}" 和作者: "${bookAuthor?.value || 'N/A'}"`); return; } const englishTitleAuthorPattern = /(.+?)(?:\s+-\s+|\s+by\s+)(.+)/i; const englishMatch = name.match(englishTitleAuthorPattern); if (englishMatch) { if (bookTitle) bookTitle.value = englishMatch[1].trim(); if (bookAuthor) bookAuthor.value = englishMatch[2].trim(); log(`解析到标题: "${bookTitle?.value || 'N/A'}" 和作者: "${bookAuthor?.value || 'N/A'}"`); return; } if (bookTitle) bookTitle.value = name.trim(); if (bookAuthor) bookAuthor.value = ''; log(`Using filename as title: "${bookTitle?.value || 'N/A'}", author cleared.`);
+            }
+            /**
+             * 解码文件 ArrayBuffer 的一个样本为文本字符串。
+             * @param {ArrayBuffer} arrayBuffer - 文件的 ArrayBuffer。
+             * @param {string} encoding - 用于解码的字符编码。
+             * @param {number} [maxLength=4096] - 要解码的最大字节数（样本大小）。
+             * @returns {Promise<string>} - 解码后的文本样本。
+             */
+             async function decodeSampleText(arrayBuffer, encoding, maxLength = 4096) {
+                if (!arrayBuffer || arrayBuffer.byteLength === 0) return "";
+                const sampleBuffer = arrayBuffer.slice(0, Math.min(arrayBuffer.byteLength, maxLength));
+                try {
+                    const decoder = new TextDecoder(encoding, { fatal: false }); // fatal:false 避免因样本中少量坏字符中断
+                    return decoder.decode(sampleBuffer);
+                } catch (e) {
+                    log(`解码样本文本时出错 (编码 ${encoding}), 尝试UTF-8: ${e.message}`, 'warning');
+                    try {
+                        const decoder = new TextDecoder('UTF-8', { fatal: false });
+                        return decoder.decode(sampleBuffer);
+                    } catch (eUtf8) {
+                        log(`UTF-8回退解码样本文本时也出错: ${eUtf8.message}`, 'error');
+                        return ""; // 解码失败
+                    }
+                }
+            }
+
+            /**
+             * 从文本样本（通常是文件的前几行）中提取书名和作者。
+             * @param {string} textSample - 文本样本。
+             * @returns {{title: string|null, author: string|null}} - 提取到的书名和作者对象。
+             */
+            function extractTitleAuthorFromContent(textSample) {
+                if (!textSample) return { title: null, author: null };
+
+                const lines = textSample.split('\n').slice(0, 20); // 分析文件的前20行
+                let extractedTitle = null;
+                let extractedAuthor = null;
+
+                const titleRegex = /《([^》]+)》/; // 匹配 《书名》
+                // 匹配 作者：姓名 或 著：姓名 (更宽松)
+                const authorRegex = /(?:作者|著者|著|编著)[:：\s]*([^\s\n\r（(《》]+)/;
+
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    // 尝试在当前行匹配书名
+                    if (!extractedTitle) {
+                        const titleMatch = line.match(titleRegex);
+                        if (titleMatch && titleMatch[1]) {
+                            extractedTitle = titleMatch[1].trim();
+                            // 如果书名和作者在同一行，例如 "《书名》 作者：某某"
+                            const remainingLineAfterTitle = line.substring(line.indexOf(titleMatch[0]) + titleMatch[0].length);
+                            const authorMatchSameLine = remainingLineAfterTitle.match(authorRegex);
+                            if (authorMatchSameLine && authorMatchSameLine[1]) {
+                                extractedAuthor = authorMatchSameLine[1].trim();
+                            }
+                        }
+                    }
+
+                    // 尝试在当前行匹配作者 (如果尚未从书名行获取)
+                    if (!extractedAuthor) {
+                        const authorMatch = line.match(authorRegex);
+                        if (authorMatch && authorMatch[1]) {
+                            extractedAuthor = authorMatch[1].trim();
+                            // 如果作者信息在书名之前，例如 "作者：某某 《书名》"
+                            // 并且书名还没找到，尝试在当前行找书名
+                            if (!extractedTitle) {
+                                const titleMatchSameLine = line.match(titleRegex);
+                                if (titleMatchSameLine && titleMatchSameLine[1]) {
+                                    extractedTitle = titleMatchSameLine[1].trim();
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 如果书名和作者都找到了，可以提前退出以提高效率
+                    // if (extractedTitle && extractedAuthor) break;
+                }
+                
+                // 处理特殊情况：如 "《书名 作者 作者名》" 或 "《书名 作者：作者名》"
+                if (extractedTitle && !extractedAuthor) {
+                    const specialAuthorMatch = extractedTitle.match(/^(.*?)[\s　]*(?:作者|著者|著|编著)[:：\s]*([^\s（(《》]+)$/);
+                    if (specialAuthorMatch && specialAuthorMatch[1] && specialAuthorMatch[2]) {
+                        extractedTitle = specialAuthorMatch[1].trim();
+                        extractedAuthor = specialAuthorMatch[2].trim();
+                    }
+                }
+
+
+                return { title: extractedTitle, author: extractedAuthor };
+            }
+            /**
+             * Removes lines from the beginning of the text content if they match the given title, author,
+             * or common metadata keywords.
+             * @param {string} textContent - The full text content.
+             * @param {string} finalTitle - The determined book title.
+             * @param {string} finalAuthor - The determined book author.
+             * @param {number} [linesToCheck=10] - How many lines from the beginning to check.
+             * @returns {string} - The text content with metadata lines removed.
+             */
+             function removeMetadataLinesFromContent(textContent, finalTitle, finalAuthor, linesToCheck = 10) {
+                if (!textContent) return ""; // 返回空字符串，而不是原始的 textContent
+                let lines = textContent.split('\n');
+                let linesRemovedCount = 0;
+
+                const patterns = [];
+                const titleKeywords = ['书名', 'title'];
+                const authorLabelKeywords = ['作者', 'author', '著', '编著'];
+                // standaloneAuthorKeywords 用于匹配单独一行的 "作者" 标签
+                const standaloneKeywords = ['书名', 'title', '作者', 'author']; // Combined for simplicity
+
+
+                // Helper to escape regex special characters in a string
+                function escapeRegExp(string) {
+                    if (typeof string !== 'string') return '';
+                    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                }
+
+                // Modified addFieldPatterns to handle core values and 《》 wrapped values
+                function addFieldPatterns(value, keywordsForLabel) {
+                    if (value && value.trim() !== "") {
+                        const coreValue = value.trim();
+                        const escapedCoreValue = escapeRegExp(coreValue);
+
+                        // Pattern 1a: The core value itself (e.g., "金瓶梅")
+                        patterns.push(new RegExp(`^\\s*${escapedCoreValue}\\s*$`, 'i'));
+                        // Pattern 1b: The core value wrapped in 《》 (e.g., "《金瓶梅》")
+                        patterns.push(new RegExp(`^\\s*《${escapedCoreValue}》\\s*$`, 'i'));
+
+                        // Pattern 2a: "Keyword: core_value" or "Keyword core_value" (e.g., "书名: 金瓶梅")
+                        patterns.push(new RegExp(`^\\s*(?:${keywordsForLabel.join('|')})(?:[:：]\\s*|\\s+)${escapedCoreValue}\\s*$`, 'i'));
+                        // Pattern 2b: "Keyword: 《core_value》" or "Keyword 《core_value》" (e.g., "书名: 《金瓶梅》")
+                        patterns.push(new RegExp(`^\\s*(?:${keywordsForLabel.join('|')})(?:[:：]\\s*|\\s+)《${escapedCoreValue}》\\s*$`, 'i'));
+                    }
+                }
+
+                addFieldPatterns(finalTitle, titleKeywords);
+                addFieldPatterns(finalAuthor, authorLabelKeywords); // Pass authorLabelKeywords here
+
+                // --- NEW: Add patterns for combined Title and Author on one line ---
+                if (finalTitle && finalTitle.trim() !== "" && finalAuthor && finalAuthor.trim() !== "") {
+                    const coreTitle = finalTitle.trim();
+                    const escapedCoreTitle = escapeRegExp(coreTitle);
+                    const coreAuthor = finalAuthor.trim();
+                    const escapedCoreAuthor = escapeRegExp(coreAuthor);
+
+                    // Regex part for the title, allowing it to be plain or wrapped in 《》
+                    const titleRegexPart = `(?:${escapedCoreTitle}|《${escapedCoreTitle}》)`;
+                    // Regex part for "AuthorKeyword Separator AuthorName"
+                    const authorFullPartRegex = `(?:${authorLabelKeywords.join('|')})(?:[:：]\\s*|\\s+)${escapedCoreAuthor}`;
+
+                    // Combined pattern: Title (mandatory space) AuthorPart
+                    // Example: "凡人修仙传 作者：忘语"
+                    patterns.push(new RegExp(`^\\s*${titleRegexPart}\\s+${authorFullPartRegex}\\s*$`, 'i'));
+                }
+                // --- END NEW ---
+
+                // Add patterns for standalone keywords (e.g., a line just containing "书名" or "作者")
+                const allStandaloneKeywordsToRegister = [...new Set(standaloneKeywords)]; // Use the combined list
+                for (const keyword of allStandaloneKeywordsToRegister) {
+                    patterns.push(new RegExp(`^\\s*${escapeRegExp(keyword)}\\s*$`, 'i'));
+                }
+
+                if (patterns.length === 0) {
+                    // Return original textContent if it was non-empty but patterns are empty
+                    // Or return empty string if textContent was initially empty (handled at the top)
+                    return textContent;
+                }
+
+                let currentIndex = 0;
+                let numOriginalLinesInspected = 0;
+
+                while (currentIndex < lines.length && numOriginalLinesInspected < linesToCheck) {
+                    const currentLineOriginal = lines[currentIndex];
+                    const currentLineTrimmed = currentLineOriginal.trim();
+
+                    numOriginalLinesInspected++;
+
+                    if (currentLineTrimmed === "") {
+                        currentIndex++;
+                        continue;
+                    }
+
+                    let matchedThisLine = false;
+                    for (const pattern of patterns) {
+                        if (pattern.test(currentLineTrimmed)) {
+                            matchedThisLine = true;
+                            break;
+                        }
+                    }
+
+                    if (matchedThisLine) {
+                        log(`从内容开头移除元数据行: "${currentLineOriginal}"`, 'info');
+                        lines.splice(currentIndex, 1);
+                        linesRemovedCount++;
+                        // Do NOT increment currentIndex here. The next line has shifted into lines[currentIndex].
+                    } else {
+                        log(`首个非元数据行 (trimmed): "${currentLineTrimmed}". 停止移除。`, 'info');
+                        break;
+                    }
+                }
+
+                if (linesRemovedCount > 0) {
+                    log(`共从内容开头移除了 ${linesRemovedCount} 行元数据。`);
+                }
+                // return lines.join('\n\n'); // <<< BUG: This adds an extra newline between every line
+                return lines.join('\n');    // <<< CORRECTED: Join with a single newline
             }
             async function detectEncoding(file) { 
-                log('Starting encoding detection...'); try { const arrayBuffer = await readFileAsArrayBuffer(file); fileArrayBuffer = arrayBuffer; if (typeof jschardet === 'undefined') { log('jschardet library not found, using UTF-8 as default encoding', 'warning'); return { encoding: 'UTF-8', confidence: 0.9 }; } const sampleSize = Math.min(4096, arrayBuffer.byteLength); const sampleData = new Uint8Array(arrayBuffer, 0, sampleSize); const result = jschardet.detect(sampleData); let encoding = result.encoding || 'UTF-8'; if (encoding === 'ascii' || encoding === 'windows-1252') { const possibleChinese = detectChineseEncoding(sampleData); if (possibleChinese) { encoding = 'GB18030'; result.confidence = 0.85; } } const mappedEncoding = mapEncodingName(encoding); log(`Encoding detection complete: ${mappedEncoding} (original: ${encoding})`); return { encoding: mappedEncoding, confidence: result.confidence || 0.5 }; } catch (error) { log(`Encoding detection failed: ${error.message}`, 'error'); throw error; }
+                log('开始检测文件编码...'); try { const arrayBuffer = await readFileAsArrayBuffer(file); fileArrayBuffer = arrayBuffer; if (typeof jschardet === 'undefined') { log('jschardet library not found, using UTF-8 as default encoding', 'warning'); return { encoding: 'UTF-8', confidence: 0.9 }; } const sampleSize = Math.min(4096, arrayBuffer.byteLength); const sampleData = new Uint8Array(arrayBuffer, 0, sampleSize); const result = jschardet.detect(sampleData); let encoding = result.encoding || 'UTF-8'; if (encoding === 'ascii' || encoding === 'windows-1252') { const possibleChinese = detectChineseEncoding(sampleData); if (possibleChinese) { encoding = 'GB18030'; result.confidence = 0.85; } } const mappedEncoding = mapEncodingName(encoding); return { encoding: mappedEncoding, confidence: result.confidence || 0.5 }; } catch (error) { log(`编码检测失败: ${error.message}`, 'error'); throw error; }
             }
             function detectChineseEncoding(data) { 
                 let gbkPatternCount = 0; for (let i = 0; i < data.length - 1; i++) { if (data[i] >= 0x81 && data[i] <= 0xFE) { if (data[i+1] >= 0x40 && data[i+1] <= 0xFE) gbkPatternCount++; } } return gbkPatternCount > 20;
@@ -2475,7 +2992,7 @@
                  return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('Failed to read file as ArrayBuffer.')); reader.readAsArrayBuffer(file); });
             }
             async function decodeText(arrayBuffer, encodingName) { 
-                log(`Decoding text with encoding: ${encodingName}`); try { const decoder = new TextDecoder(encodingName, { fatal: true }); return decoder.decode(arrayBuffer); } catch (error) { log(`TextDecoder failed for ${encodingName}: ${error.message}. Falling back to UTF-8.`, 'warning'); try { const fallbackDecoder = new TextDecoder('UTF-8', { fatal: false }); return fallbackDecoder.decode(arrayBuffer); } catch (fallbackError) { log(`Fallback UTF-8 decoding also failed: ${fallbackError.message}`, 'error'); throw new Error(`Failed to decode text with ${encodingName} and fallback UTF-8.`); } }
+                try { const decoder = new TextDecoder(encodingName, { fatal: true }); return decoder.decode(arrayBuffer); } catch (error) { log(`TextDecoder failed for ${encodingName}: ${error.message}. Falling back to UTF-8.`, 'warning'); try { const fallbackDecoder = new TextDecoder('UTF-8', { fatal: false }); return fallbackDecoder.decode(arrayBuffer); } catch (fallbackError) { log(`Fallback UTF-8 decoding also failed: ${fallbackError.message}`, 'error'); throw new Error(`Failed to decode text with ${encodingName} and fallback UTF-8.`); } }
             }
             async function readFileAsDataURL(file) { 
                  return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = (error) => reject(new Error(`Failed to read file as DataURL: ${error}`)); reader.readAsDataURL(file); });
