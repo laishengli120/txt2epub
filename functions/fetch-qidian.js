@@ -1,4 +1,3 @@
-// netlify/functions/fetch-qidian.js
 const fetch = require('node-fetch'); // 用于在Node.js环境中发送HTTP请求
 
 exports.handler = async function(event, context) {
