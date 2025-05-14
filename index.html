@@ -1225,6 +1225,8 @@
         <button id="continueInQuarkBtn" class="btn btn-sm btn-outline">继续在此浏览器使用</button>
     </div>
 
+    <script src="//cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // DOM Elements
@@ -1313,7 +1315,7 @@
                             navigator.clipboard.writeText(currentUrl)
                                 .then(() => {
                                     showCustomAlert('链接已复制到剪贴板！请在其他浏览器中粘贴打开。', '复制成功', 'success');
-                                    // browserCompatibilityMessage.style.display = 'none'; // 可选：复制后隐藏提示
+                                    browserCompatibilityMessage.style.display = 'none'; // 可选：复制后隐藏提示
                                 })
                                 .catch(err => {
                                     log('Failed to copy link: ' + err, 'error');
