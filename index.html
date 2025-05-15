@@ -500,24 +500,39 @@
             overflow: hidden; /* Ensure children fit */
         }
         .file-preview {
-            display: none; /* Keep initial state */
+            display: flex; /* Keep initial state */
             align-items: center;
+            justify-content: space-between;
             padding: 15px;
             background-color: transparent; /* Use parent background */
             flex: 1;
             border-radius: 0; /* Remove individual radius */
         }
-        
-        .file-preview i {
-            font-size: 28px;
-            margin-right: 15px;
-            color: var(--memphis-dark);
+        .file-preview .file-icon-and-details {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
         }
         
-        .file-details { flex: 1; }
-        .file-details h4 { font-weight: 600; font-size: 1rem; color: var(--memphis-dark); }
+        .file-preview .file-icon-and-details i.fa-file-alt {
+            font-size: 26px;
+            margin-right: 12px;
+            color: var(--memphis-dark);
+            flex-shrink: 0;
+        }
+        .file-preview .file-details {
+            min-width: 0; /* Prevent overflow */
+        }
         
-        #removeTxtBtn { /* Style remove button */
+        .file-details h4 { font-weight: 600; font-size: 1rem; color: var(--memphis-dark); 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* Ellipsis for long text */
+        }
+        .file-preview-actions {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .file-preview-actions .icon-button { /* Style remove button */
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -525,18 +540,39 @@
             cursor: pointer;
             border-radius: 50%; /* Circle */
             border: 2px solid var(--memphis-dark);
-            margin-right: 0; /* Remove margin */
             margin-left: 15px; /* Add left margin */
-            background-color: var(--memphis-primary); /* Red/Pink */
-            color: var(--memphis-white);
             transition: var(--transition);
         }
-        #removeTxtBtn:hover {
-            background-color: var(--memphis-dark);
-            transform: rotate(90deg);
+        .file-preview-actions .icon-button:first-child {
+            margin-left: 0; /* Remove left margin for first child */
         }
-        #removeTxtBtn i { font-size: 16px; margin: 0; }
-
+        .file-preview-actions .icon-button i {
+            font-size: 15px; /* Icon size */
+        }
+        .file-preview-actions .icon-button:hover {
+            /* 通用悬停效果 */
+            transform: translateY(-2px) translateX(-2px) rotate(8deg) scale(1.05);
+            box-shadow: 5px 5px 0px var(--memphis-dark);
+        }
+        .file-preview-actions .icon-button:active {
+            /* 通用点击效果 */
+            transform: translateY(0) translateX(0) rotate(0) scale(0.95);
+            box-shadow: 2px 2px 0px var(--memphis-dark);
+        }
+        #previewTxtBtn.icon-button {
+            background-color: var(--memphis-secondary); /* Yellow */
+            color: var(--memphis-dark);
+        }
+        #previewTxtBtn.icon-button:hover {
+            background-color: var(--memphis-accent1); /* Light blue hover */
+        }
+        #removeTxtBtn.icon-button {
+            background-color: var(--memphis-primary); /* Red/Pink */
+            color: var(--memphis-white);
+        }
+        #removeTxtBtn.icon-button:hover {
+            background-color: var(--memphis-accent2); /* Mint green hover */
+        }
         /* Convert Button Specific Style */
         .convert-btn {
             padding: 15px 35px; /* More padding */
@@ -1082,6 +1118,10 @@
                                 <option value="1.5em">宽松 (1.5em)</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label for="previewLineCountInput">TXT预览行数</label>
+                            <input type="number" id="previewLineCountInput" class="form-control" min="50" max="2000" step="50" value="300">
+                        </div>
                     </div>
                 </div>
 
@@ -1145,11 +1185,20 @@
 
                     <div class="filbt">
                         <div class="file-preview" id="txtPreview">
-                            <i class="fas fa-file-alt"></i>
-                            <div class="file-details">
-                                <h4 id="txtFileName">filename.txt</h4>
+                            <div class="file-icon-and-details">
+                                <i class="fas fa-file-alt"></i>
+                                <div class="file-details">
+                                    <h4 id="txtFileName">filename.txt</h4>
+                                </div>
                             </div>
-                            <span id="removeTxtBtn" title="移除文件"><i class="fas fa-times"></i></span>
+                            <div class="file-preview-actions">
+                                <button type="button" class="icon-button" id="previewTxtBtn" title="预览文件内容">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="icon-button" id="removeTxtBtn" title="移除文件">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                         </div>
                         <button class="convert-btn" id="convertBtn">
                             <span class="convert-btn-text">开始转换!</span>
@@ -1207,6 +1256,21 @@
             </div>
         </div>
     </div>
+    <div id="txtPreviewModal" class="modal-overlay">
+        <div class="modal-content memphis-modal" style="max-width: 80%; width: 750px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h4 id="txtPreviewModalTitle" class="modal-title-text">文件内容预览</h4>
+                <button id="txtPreviewModalCloseBtn" class="modal-close-btn" title="关闭">&times;</button>
+            </div>
+            <div class="modal-body" style="flex-grow: 1; overflow-y: hidden; display: flex; flex-direction: column; padding-top:15px; padding-bottom:10px;">
+                <pre id="txtPreviewContent" style="white-space: pre-wrap; word-wrap: break-word; flex-grow: 1; overflow-y: auto; background-color: var(--memphis-bg); padding: 15px; border: 2px solid var(--memphis-dark); border-radius: var(--border-radius); font-size: 0.9rem; line-height: 1.5;"></pre>
+                <p id="txtPreviewInfo" style="font-size: 0.85rem; margin-top: 10px; text-align: center; color: var(--memphis-dark);"></p>
+            </div>
+            <div class="modal-footer" style="margin-top:15px;">
+                <button id="txtPreviewModalOkBtn" class="btn btn-primary">关闭</button>
+            </div>
+        </div>
+    </div>
 
     <!-- 由于夸克浏览器下载功能不支持，所以引导用户使用其他浏览器 -->
     <div id="browserCompatibilityMessage" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background-color: var(--memphis-secondary); color: var(--memphis-dark); padding: 15px; text-align: center; z-index: 3000; border-bottom: var(--bold-border); box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
@@ -1235,6 +1299,7 @@
             const txtFileSize = document.getElementById('txtFileSize');
             const txtEncoding = document.getElementById('txtEncoding');
             const removeTxtBtn = document.getElementById('removeTxtBtn');
+            const previewTxtBtn = document.getElementById('previewTxtBtn');
             const bookTitle = document.getElementById('bookTitle');
             const bookAuthor = document.getElementById('bookAuthor');
             const chapterPattern = document.getElementById('chapterPattern');
@@ -1283,6 +1348,13 @@
             const convertNewBtn = document.getElementById('convertNewBtn');
 
 
+            const txtPreviewModal = document.getElementById('txtPreviewModal');
+            const txtPreviewModalTitle = document.getElementById('txtPreviewModalTitle');
+            const txtPreviewContent = document.getElementById('txtPreviewContent');
+            const txtPreviewInfo = document.getElementById('txtPreviewInfo');
+            const txtPreviewModalCloseBtn = document.getElementById('txtPreviewModalCloseBtn');
+            const txtPreviewModalOkBtn = document.getElementById('txtPreviewModalOkBtn');
+            const previewLineCountInput = document.getElementById('previewLineCountInput')
             // ----------夸克浏览器--------
             const browserCompatibilityMessage = document.getElementById('browserCompatibilityMessage');
             const copyLinkBtn = document.getElementById('copyLinkBtn');
@@ -1338,6 +1410,7 @@
             detectQuarkBrowserAndNotify();
         // ------- 夸克浏览器结束 --------
 
+
             // 在获取其他 DOM 元素的地方添加：
             const googleBooksApiKeyInput = document.getElementById('googleBooksApiKeyInput');
 
@@ -1389,6 +1462,138 @@
                 }
             }
 
+            /**
+             * Shows the TXT preview modal.
+             * @param {string} content - The text content to preview.
+             * @param {string} fileName - The name of the file being previewed.
+             * @param {number} totalLines - Total lines in the previewed content.
+             * @param {number} previewLines - Number of lines requested for preview.
+             */
+            function showTxtPreviewModal(content, fileName, totalLines, previewLines) {
+                if (!txtPreviewModal || !txtPreviewContent || !txtPreviewModalTitle || !txtPreviewInfo) {
+                    console.warn("TXT Preview modal DOM elements not found.");
+                    showCustomAlert("无法显示文件预览，预览组件丢失。", "预览错误", "error");
+                    return;
+                }
+
+                txtPreviewModalTitle.textContent = `预览: ${fileName}`;
+                txtPreviewContent.textContent = content;
+
+                let infoText = `显示 ${Math.min(totalLines, previewLines)} 行`;
+                if (totalLines > previewLines) {
+                    infoText += ` (共 ${totalLines} 行)`;
+                }
+                txtPreviewInfo.textContent = infoText;
+
+                txtPreviewModal.classList.add('visible');
+                txtPreviewModalOkBtn.focus();
+            }
+
+            function hideTxtPreviewModal() {
+                if (txtPreviewModal) {
+                    const clearModalContent = () => {
+                        if (txtPreviewContent) txtPreviewContent.textContent = '';
+                        if (txtPreviewInfo) txtPreviewInfo.textContent = '';
+                        log('TXT preview modal content cleared after transition.', 'debug');
+                    };
+
+                    const handleTransitionEnd = (event) => {
+                        // Ensure the event is for the opacity transition on the modal itself
+                        if (event.target === txtPreviewModal && event.propertyName === 'opacity') {
+                            clearModalContent();
+                        }
+                    };
+
+                    // Add the event listener with 'once: true' so it automatically removes itself after firing.
+                    // This listens for the end of the CSS transition.
+                    txtPreviewModal.addEventListener('transitionend', handleTransitionEnd, { once: true });
+
+                    // Start the hiding transition by removing the 'visible' class.
+                    // This should trigger the CSS opacity transition defined for .modal-overlay.
+                    txtPreviewModal.classList.remove('visible');
+
+                    // Fallback timeout in case transitionend doesn't fire for some reason
+                    // (e.g., transitions disabled in browser, or element removed from DOM before transition ends).
+                    // This timeout should be slightly longer than the CSS transition duration (e.g., 0.3s for opacity).
+                    setTimeout(() => {
+                        // Check if the content is still there; if so, transitionend likely didn't fire.
+                        // The 'once: true' listener would have already run clearModalContent if it fired.
+                        if (txtPreviewContent && txtPreviewContent.textContent !== '') {
+                            log('Fallback: Clearing TXT preview modal content due to timeout.', 'debug');
+                            clearModalContent();
+                            // Manually remove the listener if the fallback is hit and 'once: true' didn't (highly unlikely but for safety).
+                            txtPreviewModal.removeEventListener('transitionend', handleTransitionEnd);
+                        }
+                    }, 350); // CSS transition is 0.3s (300ms), so 350ms is a safe buffer.
+                }
+            }
+
+            if (txtPreviewModalCloseBtn) {
+                txtPreviewModalCloseBtn.addEventListener('click', hideTxtPreviewModal);
+            }
+            if (txtPreviewModalOkBtn) {
+                txtPreviewModalOkBtn.addEventListener('click', hideTxtPreviewModal);
+            }
+            if (txtPreviewModal) {
+                txtPreviewModal.addEventListener('click', (event) => {
+                    if (event.target === txtPreviewModal) {
+                        hideTxtPreviewModal();
+                    }
+                });
+            }
+            // Pressing Escape key to close the TXT preview modal
+            document.addEventListener('keydown', (event) => {
+                if (event.key === "Escape" && txtPreviewModal && txtPreviewModal.classList.contains('visible')) {
+                    hideTxtPreviewModal();
+                }
+            });
+
+
+            // Event listener for the TXT preview button
+            if (previewTxtBtn) {
+                previewTxtBtn.addEventListener('click', async () => {
+                    if (!selectedFile) {
+                        showCustomAlert('没有选择文件以供预览。', '预览提示', 'info');
+                        return;
+                    }
+                    if (!fileArrayBuffer) {
+                        showCustomAlert('文件内容尚未加载，请稍后再试。', '预览错误', 'error');
+                        log('File ArrayBuffer is null, cannot preview.', 'error');
+                        return;
+                    }
+
+                    try {
+                        const lineCount = parseInt(previewLineCountInput.value, 10) || 300; // Default to 300 lines
+                        log(`Attempting to preview ${lineCount} lines of ${selectedFile.name}`);
+
+                        // Use the already detected encoding or default to UTF-8
+                        const encodingToUse = detectedEncoding || 'UTF-8';
+                        const decoder = new TextDecoder(encodingToUse, { fatal: false }); // fatal:false to avoid errors on partial multibyte chars at cut-off
+
+                        // Decide how much of the buffer to decode for preview
+                        // This is a rough estimation. For precise line counting, one would need to decode iteratively.
+                        // Average bytes per line can vary greatly. Let's assume an average of 50-100 bytes per line for estimation.
+                        // To be safe and performant, we might just decode a fixed large chunk initially.
+                        const initialChunkSize = Math.min(fileArrayBuffer.byteLength, lineCount * 150); // Estimate 150 bytes per line
+                        const textChunk = decoder.decode(fileArrayBuffer.slice(0, initialChunkSize));
+
+                        const lines = textChunk.split('\n');
+                        const previewContent = lines.slice(0, lineCount).join('\n');
+                        const actualLinesInPreview = lines.slice(0, lineCount).length; // How many lines are actually in the preview string
+                        const totalLinesInChunk = lines.length; // Total lines in the decoded chunk
+
+                        // A more accurate total line count would require decoding the whole file,
+                        // which might be slow for very large files. For preview, totalLinesInChunk is often sufficient.
+                        // If initialChunkSize was less than fileArrayBuffer.byteLength, totalLinesInChunk is an underestimate of total file lines.
+
+                        showTxtPreviewModal(previewContent, selectedFile.name, totalLinesInChunk, lineCount);
+
+                    } catch (error) {
+                        log(`Error during TXT preview: ${error.message}`, 'error');
+                        showCustomAlert(`预览文件内容时发生错误: ${error.message}`, '预览失败', 'error');
+                    }
+                });
+            }
             function loadUserSettings() {
                 if (typeof(Storage) === "undefined") {
                     log("浏览器不支持 localStorage，无法加载用户设置。", "warning");
@@ -2352,7 +2557,8 @@
                     /^\s*所有资源部分转载自互联网.*?$/gim,
                     /^\s*友情提示：.*?$/gim,
                     /^\s*[-—=]{10,}\s*$/gm, // 移除“纯粹由分隔符组成的行”，如果它们未被块移除捕获
-                    // 您可以根据需要继续添加更多模式
+                    /ρо-18,cом/gim,
+
                 ];
 
                 junkPatterns.forEach(pattern => {
@@ -2363,6 +2569,7 @@
                 text = text.replace(/^\s*本文来自.*$/gm, '');
                 text = text.replace(/^\s*(正文|序章|章节目录|最新章节|作品相关|第一卷|VIP卷)\s*$/gim, '');
                 text = text.replace(/^\s*(赞助商链接|AD)\s*$/gim, '');
+                text = text.replace(/ρΘ-㈠8,cΘм/gim, '——');
 
 
                 // 4. 清理因移除产生的多余空行：将多个连续换行符合并为一个，并移除开头和结尾的空白
