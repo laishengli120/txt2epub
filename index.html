@@ -906,6 +906,47 @@
         .memphis-modal.modal-success .modal-title-text { color: var(--memphis-accent2); }
         /* .memphis-modal.modal-success { border-color: var(--memphis-accent2); } */
 
+        #txtPreviewModal .modal-content.memphis-modal {
+            width: 90%; /* Default width for larger screens, constrained by max-width */
+            max-width: 750px; /* Max width for larger screens, allows more content than general alerts */
+            max-height: 85vh; /* Max height to leave some space around the modal */
+            display: flex; /* Enable flexbox for vertical layout of header, body, footer */
+            flex-direction: column; /* Stack children vertically */
+            padding: 20px; /* Adjusted padding */
+        }
+
+        /* Styles for the body within the TXT preview modal */
+        #txtPreviewModal .modal-body {
+            flex-grow: 1; /* Allows the body to take up available vertical space */
+            overflow-y: hidden; /* The body itself shouldn't scroll; the <pre> inside it will */
+            display: flex; /* Enable flexbox for layout of <pre> and info text */
+            flex-direction: column; /* Stack <pre> and info text vertically */
+            padding-top: 10px;
+            padding-bottom: 5px;
+            margin-bottom: 15px; /* Adjusted margin for better spacing from footer */
+        }
+
+        /* Styles for the <pre> tag holding the TXT content */
+        #txtPreviewModal #txtPreviewContent {
+            flex-grow: 1; /* Allow <pre> to take available space within the modal-body */
+            overflow-y: auto; /* Enable scrolling for the content itself if it overflows */
+            white-space: pre-wrap; /* Wrap long lines */
+            word-wrap: break-word; /* Break words to prevent horizontal overflow */
+            background-color: var(--memphis-bg); /* Light background for readability */
+            padding: 10px; /* Slightly reduced padding inside the <pre> tag */
+            border: 2px solid var(--memphis-dark); /* Consistent border style */
+            border-radius: var(--border-radius);
+            font-size: 0.85rem; /* Slightly smaller font to show more content */
+            line-height: 1.4; /* Adjust line height for readability */
+        }
+
+        /* Styles for the info text below the <pre> tag */
+        #txtPreviewModal #txtPreviewInfo {
+            font-size: 0.8rem; /* Smaller font for the info text (e.g., line count) */
+            margin-top: 8px;
+            text-align: center; /* Center the info text */
+            flex-shrink: 0; /* Prevent info text from shrinking if content is large */
+        }
 
         /* --- Responsive Adjustments --- */
         @media (max-width: 992px) {
@@ -955,6 +996,25 @@
              .summary-container { flex-direction: row; align-items: center;} /* Changed to column for better spacing */
              .summary-text { width: 100%; margin-bottom: 15px; }
              .summary-cover { margin-top: 0; }
+             #txtPreviewModal .modal-content.memphis-modal {
+                width: 95%; /* Take more width on smaller screens */
+                max-width: none; /* Remove fixed max-width constraint on small screens */
+                padding: 15px; /* Adjust padding */
+                max-height: 80vh; /* Adjust max height if needed for tablets */
+            }
+
+            #txtPreviewModal .modal-header {
+                padding-bottom: 10px; /* Reduce padding */
+                margin-bottom: 10px; /* Reduce margin */
+            }
+            #txtPreviewModal .modal-title-text {
+                font-size: 1.1rem; /* Slightly smaller title on mobile */
+            }
+
+            #txtPreviewModal #txtPreviewContent {
+                padding: 8px; /* Reduce padding inside content area */
+                font-size: 0.8rem; /* Further reduce font size on small screens for more content visibility */
+            }
         }
         
         @media (max-width: 576px) {
@@ -968,6 +1028,33 @@
             .btn { padding: 10px 20px; font-size: 0.9rem; }
             .result-actions { gap: 10px; }
             .result-actions .btn { width: 100%; min-width: auto; }
+            #txtPreviewModal .modal-content.memphis-modal {
+                padding: 10px; /* Minimal padding */
+                max-height: 75vh; /* Ensure it fits vertically */
+            }
+            #txtPreviewModal .modal-header::before { /* Adjust decorative element position */
+                left: -10px; 
+                width: 12px;
+                height: 12px;
+            }
+            #txtPreviewModal .modal-title-text {
+                font-size: 1.0rem; /* Smaller title */
+            }
+            #txtPreviewModal .modal-close-btn {
+                font-size: 1.3rem; /* Adjust close button size */
+                padding: 1px 6px;
+            }
+            #txtPreviewModal #txtPreviewContent {
+                font-size: 0.75rem; /* Smallest font size for maximum content */
+                line-height: 1.3; /* Adjust line height for smaller font */
+            }
+            #txtPreviewModal .modal-footer {
+                margin-top:10px; /* Adjust footer margin */
+            }
+            #txtPreviewModal .modal-footer .btn {
+                padding: 8px 15px; /* Smaller buttons in footer */
+                font-size: 0.9rem;
+            }
         }
 
         /* Animation for spinner */
@@ -1257,16 +1344,16 @@
         </div>
     </div>
     <div id="txtPreviewModal" class="modal-overlay">
-        <div class="modal-content memphis-modal" style="max-width: 80%; width: 750px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-content memphis-modal">
             <div class="modal-header">
                 <h4 id="txtPreviewModalTitle" class="modal-title-text">文件内容预览</h4>
                 <button id="txtPreviewModalCloseBtn" class="modal-close-btn" title="关闭">&times;</button>
             </div>
-            <div class="modal-body" style="flex-grow: 1; overflow-y: hidden; display: flex; flex-direction: column; padding-top:15px; padding-bottom:10px;">
-                <pre id="txtPreviewContent" style="white-space: pre-wrap; word-wrap: break-word; flex-grow: 1; overflow-y: auto; background-color: var(--memphis-bg); padding: 15px; border: 2px solid var(--memphis-dark); border-radius: var(--border-radius); font-size: 0.9rem; line-height: 1.5;"></pre>
-                <p id="txtPreviewInfo" style="font-size: 0.85rem; margin-top: 10px; text-align: center; color: var(--memphis-dark);"></p>
+            <div class="modal-body">
+                <pre id="txtPreviewContent"></pre>
+                <p id="txtPreviewInfo"></p>
             </div>
-            <div class="modal-footer" style="margin-top:15px;">
+            <div class="modal-footer">
                 <button id="txtPreviewModalOkBtn" class="btn btn-primary">关闭</button>
             </div>
         </div>
