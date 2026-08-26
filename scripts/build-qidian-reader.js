@@ -12,162 +12,89 @@ for (let i = 0; i < 8; i++) {
   parts.push(Buffer.from(text, 'base64'));
 }
 
-const gzip = Buffer.concat(parts);
-let script = zlib.gunzipSync(gzip).toString('utf8');
-
+let script = zlib.gunzipSync(Buffer.concat(parts)).toString('utf8');
 if (!script.startsWith('// ==UserScript==') || !script.includes('// @version      2.4.0')) {
   throw new Error('V2.4.0 Userscript build validation failed');
 }
 
-script = script.replace('// @version      2.4.0', '// @version      2.4.1');
-
-script += String.raw`
-
-/* === WeRead UI refinement patch · V2.4.1 === */
-(() => {
-  'use strict';
-
-  const STYLE_ID = 'qdr-weread-v241-refine';
-  if (!document.getElementById(STYLE_ID)) {
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      html.qdr-instant-page-switch *,
-      html.qdr-instant-page-switch *::before,
-      html.qdr-instant-page-switch *::after {
-        transition: none !important;
-        animation: none !important;
-        scroll-behavior: auto !important;
-      }
-      .qdr-v241-page-indicator-hidden {
-        display: none !important;
-        visibility: hidden !important;
-      }
-    `;
-    (document.head || document.documentElement).appendChild(style);
-  }
-
-  function isVisible(el, rect) {
-    if (!el || !rect) return false;
-    const cs = getComputedStyle(el);
-    return cs.display !== 'none' && cs.visibility !== 'hidden' && Number(cs.opacity || 1) > 0 && rect.width > 0 && rect.height > 0;
-  }
-
-  function hidePageIndicator() {
-    const maxTop = window.innerHeight * 0.68;
-    for (const el of document.querySelectorAll('body *')) {
-      if (el.children.length > 1) continue;
-      const text = (el.textContent || '').trim();
-      if (!/^\d+\s*\/\s*\d+$/.test(text)) continue;
-      const rect = el.getBoundingClientRect();
-      if (!isVisible(el, rect)) continue;
-      if (rect.top < maxTop || rect.width > 120 || rect.height > 50) continue;
-      el.classList.add('qdr-v241-page-indicator-hidden');
-    }
-  }
-
-  function tuneRightToolbar() {
-    const vw = window.innerWidth;
-    if (vw < 900) return;
-
-    const all = [...document.querySelectorAll('body *')];
-
-    // 优先处理整组固定工具栏：保持微信读书式圆形按钮，避免贴到屏幕外。
-    for (const el of all) {
-      const cs = getComputedStyle(el);
-      if (cs.position !== 'fixed') continue;
-      const rect = el.getBoundingClientRect();
-      if (!isVisible(el, rect)) continue;
-      if (rect.left < vw - 220 || rect.width > 150 || rect.height < 180) continue;
-      const clickableCount = el.querySelectorAll('button,a,[role="button"]').length;
-      if (clickableCount < 2 && el.children.length < 3) continue;
-      el.style.setProperty('right', '28px', 'important');
-      el.style.setProperty('left', 'auto', 'important');
-      if (cs.transform && cs.transform !== 'none') {
-        el.style.setProperty('transform', 'none', 'important');
-      }
-    }
-
-    // 某些实现中每个圆形按钮单独 fixed，逐个钳制到视口内。
-    for (const el of all) {
-      const cs = getComputedStyle(el);
-      if (cs.position !== 'fixed') continue;
-      const rect = el.getBoundingClientRect();
-      if (!isVisible(el, rect)) continue;
-      if (rect.left < vw - 115) continue;
-      if (rect.width < 38 || rect.width > 90 || rect.height < 38 || rect.height > 90) continue;
-
-      const radius = parseFloat(cs.borderTopLeftRadius) || 0;
-      const looksRound = radius >= Math.min(rect.width, rect.height) * 0.35;
-      if (!looksRound) continue;
-
-      el.style.setProperty('right', '28px', 'important');
-      el.style.setProperty('left', 'auto', 'important');
-      el.style.setProperty('width', '56px', 'important');
-      el.style.setProperty('height', '56px', 'important');
-      el.style.setProperty('min-width', '56px', 'important');
-      el.style.setProperty('min-height', '56px', 'important');
-      el.style.setProperty('border-radius', '50%', 'important');
-      if (cs.transform && cs.transform !== 'none') {
-        el.style.setProperty('transform', 'none', 'important');
-      }
-    }
-  }
-
-  let instantTimer = 0;
-  function armInstantPageSwitch() {
-    document.documentElement.classList.add('qdr-instant-page-switch');
-    clearTimeout(instantTimer);
-    instantTimer = setTimeout(() => {
-      document.documentElement.classList.remove('qdr-instant-page-switch');
-    }, 260);
-  }
-
-  function isPageSwitchControl(target) {
-    const el = target?.closest?.('button,a,[role="button"],div,span');
-    if (!el) return false;
-    const text = (el.textContent || '').replace(/\s+/g, '').trim();
-    return /^(‹|<)?上一页(›|>)?$/.test(text) || /^(‹|<)?下一页(›|>)?$/.test(text);
-  }
-
-  document.addEventListener('pointerdown', (event) => {
-    if (isPageSwitchControl(event.target)) armInstantPageSwitch();
-  }, true);
-
-  document.addEventListener('click', (event) => {
-    if (isPageSwitchControl(event.target)) armInstantPageSwitch();
-  }, true);
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'PageUp' || event.key === 'PageDown') {
-      armInstantPageSwitch();
-    }
-  }, true);
-
-  let scheduled = false;
-  function refresh() {
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(() => {
-      scheduled = false;
-      hidePageIndicator();
-      tuneRightToolbar();
-    });
-  }
-
-  const observer = new MutationObserver(refresh);
-  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-  window.addEventListener('resize', refresh, { passive: true });
-  window.addEventListener('load', refresh, { once: true });
-  refresh();
-  setTimeout(refresh, 500);
-  setTimeout(refresh, 1500);
-})();
-`;
-
-if (!script.includes('// @version      2.4.1')) {
-  throw new Error('V2.4.1 version patch failed');
+function replaceOnce(from, to, label) {
+  if (!script.includes(from)) throw new Error(`Patch target missing: ${label}`);
+  script = script.replace(from, to);
 }
+
+replaceOnce('// @version      2.4.0', '// @version      2.4.1', 'version');
+
+replaceOnce(
+`#\${APP_ID}[data-reader-style="weread"] .qdr-content{
+    margin:0;height:calc(100% - 52px);min-height:0;overflow-x:hidden;overflow-y:hidden;
+    column-count:2;column-gap:82px;column-fill:auto;
+    font-family:var(--qdr-reader-font);font-size:20px;line-height:2;letter-spacing:.005em;color:var(--qdr-text);
+    scroll-behavior:smooth
+}`,
+`#\${APP_ID}[data-reader-style="weread"] .qdr-content{
+    margin:0;height:calc(100% - 52px);min-height:0;overflow-x:hidden;overflow-y:hidden;
+    column-count:2;column-gap:82px;column-fill:auto;
+    font-family:var(--qdr-reader-font);font-size:20px;line-height:2;letter-spacing:.005em;color:var(--qdr-text);
+    scroll-behavior:auto
+}`,
+'weread scroll behavior'
+);
+
+replaceOnce(
+`#\${APP_ID} .qdr-weread-page-count{color:var(--qdr-faint);font-size:12px;opacity:.8}
+#\${APP_ID}[data-reader-style="weread"] .qdr-tools{
+    top:222px;left:calc(50% + 668px + 36px);width:58px;gap:12px
+}
+#\${APP_ID}[data-reader-style="weread"] .qdr-tool{
+    width:58px;min-height:58px;height:58px;padding:0;border:1px solid rgba(31,35,41,.045);border-radius:50%;
+    background:var(--qdr-tool);box-shadow:0 5px 18px rgba(31,35,41,.045);gap:0
+}`,
+`#\${APP_ID} .qdr-weread-page-count{display:none}
+#\${APP_ID}[data-reader-style="weread"] .qdr-tools{
+    top:222px;left:auto;
+    right:max(22px,calc((100vw - min(1336px,calc(100vw - 210px)))/2 - 94px));
+    width:56px;gap:14px
+}
+#\${APP_ID}[data-reader-style="weread"] .qdr-tool{
+    width:56px;min-height:56px;height:56px;padding:0;border:1px solid rgba(31,35,41,.045);border-radius:50%;
+    background:var(--qdr-tool);box-shadow:0 5px 18px rgba(31,35,41,.045);gap:0
+}`,
+'weread pager count and toolbar'
+);
+
+replaceOnce(
+`#\${APP_ID}[data-reader-style="weread"] .qdr-tool.qdr-tool-top{min-height:58px}`,
+`#\${APP_ID}[data-reader-style="weread"] .qdr-tool.qdr-tool-top{min-height:56px}`,
+'top tool size'
+);
+
+replaceOnce(
+`    function turnWereadPage(article,direction,root){
+        const m=wereadMetrics(article);if(!m)return;
+        const data=readerState.chapterData.get(canonicalUrl(article.dataset.chapterUrl))||readerState.currentData;
+        if(direction>0){
+            if(m.page<m.pages-1){m.content.scrollTo({left:Math.min(m.maxLeft,m.content.scrollLeft+m.step),behavior:'smooth'});setTimeout(()=>updateWereadPager(article),260);return}
+            if(data?.next)navigateTo(data.next);
+        }else{
+            if(m.page>0){m.content.scrollTo({left:Math.max(0,m.content.scrollLeft-m.step),behavior:'smooth'});setTimeout(()=>updateWereadPager(article),260);return}
+            if(data?.prev)navigateTo(data.prev);
+        }
+    }`,
+`    function turnWereadPage(article,direction,root){
+        const m=wereadMetrics(article);if(!m)return;
+        const data=readerState.chapterData.get(canonicalUrl(article.dataset.chapterUrl))||readerState.currentData;
+        if(direction>0){
+            if(m.page<m.pages-1){m.content.scrollLeft=Math.min(m.maxLeft,m.content.scrollLeft+m.step);updateWereadPager(article);return}
+            if(data?.next)navigateTo(data.next);
+        }else{
+            if(m.page>0){m.content.scrollLeft=Math.max(0,m.content.scrollLeft-m.step);updateWereadPager(article);return}
+            if(data?.prev)navigateTo(data.prev);
+        }
+    }`,
+'instant page switching'
+);
+
+if (!script.includes('// @version      2.4.1')) throw new Error('V2.4.1 version patch failed');
 
 const outName = 'universal_qidian_reader_v2.4.1.user.js';
 fs.writeFileSync(path.join(dir, outName), script, 'utf8');
@@ -191,7 +118,7 @@ const html = `<!doctype html>
 <div class="top"><div><h1>通用小说阅读器 V2.4.1</h1><div class="sub">微信读书 UI 细节优化 · 右侧工具栏 / 无动画翻页 / 隐藏页码</div></div><div class="actions"><button class="btn primary" id="copy">复制全部代码</button><button class="btn" id="select">全选代码</button><a class="btn" href="./${outName}" download>直接下载 .user.js</a></div></div>
 <div class="meta"><span class="tag">版本 <b>2.4.1</b></span><span class="tag">构建 <b>Static 2410</b></span><span class="tag">字符 <b>${script.length.toLocaleString()}</b></span><span class="tag">静态构建</span></div>
 <section class="panel"><div class="bar"><strong>完整 Userscript</strong><span class="ok">V2.4.1 代码已就绪</span></div><textarea id="code" readonly spellcheck="false">${esc(script)}</textarea></section>
-<div class="features"><b>V2.4.1：</b>微信读书模式右侧圆形工具栏整体向页面内收并统一为 56px；上一页/下一页切换取消过渡动画，直接显示目标页；底部中央“3 / 8”形式的页码已隐藏。</div>
+<div class="features"><b>V2.4.1：</b>微信读书模式右侧工具栏改为稳定的视口内定位并统一为 56px 圆形按钮；上一页/下一页不再平滑滚动，点击后直接切换；底部中央页码已隐藏。</div>
 </main>
 <script>
 const code=document.getElementById('code'),copy=document.getElementById('copy'),select=document.getElementById('select');
