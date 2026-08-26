@@ -1,7 +1,12 @@
+[build]
+  command = "node scripts/build-qidian-reader.js"
+  publish = "."
+
 [functions]
   directory = "functions"
-  node_bundler = "esbuild" # 推荐使用esbuild以获得更快的构建速度和更好的模块处理
+  node_bundler = "esbuild"
 
-# 如果需要指定Node.js版本 (查看Netlify文档获取支持的版本)
-# [build.environment]
-#   NODE_VERSION = "18" # 示例版本
+[[headers]]
+  for = "/qidian-reader/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
