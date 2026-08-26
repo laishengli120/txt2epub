@@ -10,20 +10,43 @@
 </head>
 <body>
 <main class="wrap">
-<div class="top"><div><h1>通用小说阅读器 V2.4.0</h1><div class="sub">起点 / 微信读书双 UI · 可在阅读设置中一键切换</div></div><div class="actions"><button class="btn primary" id="copy" disabled>复制全部代码</button><button class="btn" id="select" disabled>全选代码</button><button class="btn" id="save" disabled>保存 .user.js</button></div></div>
+<div class="top"><div><h1>通用小说阅读器 V2.4.0</h1><div class="sub">起点 / 微信读书双 UI · 可在阅读设置中一键切换 · 当前页面不再使用 fetch API</div></div><div class="actions"><button class="btn primary" id="copy" disabled>复制全部代码</button><button class="btn" id="select" disabled>全选代码</button><button class="btn" id="save" disabled>保存 .user.js</button></div></div>
 <div class="meta"><span class="tag">版本 <b>2.4.0</b></span><span class="tag">行数 <b id="lines">读取中</b></span><span class="tag">大小 <b id="size">读取中</b></span><span class="tag">Tampermonkey / Violentmonkey</span></div>
-<section class="panel"><div class="bar"><strong>完整 Userscript</strong><span class="status" id="status">正在读取 V2.4.0…</span></div><textarea id="code" readonly spellcheck="false">正在读取脚本…</textarea></section>
+<section class="panel"><div class="bar"><strong>完整 Userscript</strong><span class="status" id="status">正在初始化 V2.4.0…</span></div><textarea id="code" readonly spellcheck="false">正在读取脚本…</textarea></section>
 <div class="features"><b>V2.4.0 更新：</b>新增“微信读书”桌面阅读样式，同时保留起点样式。微信读书模式采用灰色背景、白色圆角阅读卡片、双栏分页、顶部书籍栏、圆形右侧工具栏与页内“上一页 / 下一页”；在“设置 → 界面”中可随时切换。微信读书模式下自动连续拼章停用，避免与双栏分页冲突。</div>
 </main>
 <script>
 const code=document.getElementById('code'),statusEl=document.getElementById('status'),copy=document.getElementById('copy'),select=document.getElementById('select'),save=document.getElementById('save');let scriptText='';
+function xhrText(url){
+  return new Promise((resolve,reject)=>{
+    const x=new XMLHttpRequest();
+    x.open('GET',url,true);
+    x.timeout=15000;
+    x.setRequestHeader('Cache-Control','no-cache');
+    x.onload=()=>{
+      if(x.status>=200&&x.status<300)resolve(x.responseText);
+      else reject(new Error(`HTTP ${x.status}`));
+    };
+    x.onerror=()=>reject(new Error('网络请求失败'));
+    x.ontimeout=()=>reject(new Error('请求超时'));
+    x.send();
+  });
+}
+async function getChunk(i){
+  let lastError=null;
+  for(let attempt=1;attempt<=3;attempt++){
+    try{
+      statusEl.textContent=`正在读取脚本分片 ${i+1}/8 · 第 ${attempt} 次`;
+      return await xhrText(`./script-v240-${i}.b64?v=2402-${Date.now()}-${attempt}`);
+    }catch(e){lastError=e;await new Promise(r=>setTimeout(r,250*attempt));}
+  }
+  throw new Error(`payload ${i} 读取失败：${lastError?.message||lastError||'未知错误'}`);
+}
 async function load(){try{
   const chunks=[];
   let total=0;
   for(let i=0;i<8;i++){
-    const r=await fetch(`./script-v240-${i}.b64?v=2401`,{cache:'no-store'});
-    if(!r.ok)throw new Error(`payload ${i}: HTTP ${r.status}`);
-    let part=(await r.text()).replace(/^\uFEFF/,'').replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
+    let part=(await getChunk(i)).replace(/^\uFEFF/,'').replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
     if(!/^[A-Za-z0-9+/]*={0,2}$/.test(part))throw new Error(`payload ${i} 包含非法 Base64 字符`);
     part=part.replace(/=+$/,'');
     part+='='.repeat((4-part.length%4)%4);
@@ -43,7 +66,7 @@ async function load(){try{
   document.getElementById('lines').textContent=scriptText.split('\n').length.toLocaleString();
   document.getElementById('size').textContent=(new Blob([scriptText]).size/1024).toFixed(1)+' KB';
   statusEl.textContent='V2.4.0 代码已就绪';statusEl.className='status ok';copy.disabled=select.disabled=save.disabled=false
-}catch(e){console.error(e);code.value='脚本读取失败：'+e.message+'\n\n请按 Command + Shift + R 强制刷新后重试。';statusEl.textContent='读取失败';statusEl.className='status err'}}
+}catch(e){console.error(e);code.value='脚本读取失败：'+e.message+'\n\n页面已自动重试 3 次。如果仍失败，请把上面的 payload 编号和错误状态发给我。';statusEl.textContent='读取失败';statusEl.className='status err'}}
 copy.onclick=async()=>{if(!scriptText)return;try{await navigator.clipboard.writeText(scriptText)}catch(_){code.focus();code.select();document.execCommand('copy')}copy.textContent='已复制';statusEl.textContent='已复制，可粘贴到 Tampermonkey';setTimeout(()=>copy.textContent='复制全部代码',1400)};
 select.onclick=()=>{code.focus();code.select();statusEl.textContent='代码已全选'};
 save.onclick=()=>{if(!scriptText)return;const u=URL.createObjectURL(new Blob([scriptText],{type:'text/javascript;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='universal_qidian_reader_v2.4.0.user.js';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1200)};
