@@ -17,7 +17,33 @@
 </main>
 <script>
 const code=document.getElementById('code'),statusEl=document.getElementById('status'),copy=document.getElementById('copy'),select=document.getElementById('select'),save=document.getElementById('save');let scriptText='';
-async function load(){try{const parts=[];for(let i=0;i<8;i++){const r=await fetch(`./script-v240-${i}.b64?v=2400`,{cache:'no-store'});if(!r.ok)throw new Error(`payload ${i}: HTTP ${r.status}`);parts.push((await r.text()).trim())}const bytes=Uint8Array.from(atob(parts.join('')),c=>c.charCodeAt(0));if(typeof DecompressionStream!=='function')throw new Error('当前浏览器不支持脚本解压，请使用最新版 Chrome / Edge / Safari');const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));scriptText=await new Response(stream).text();if(!scriptText.startsWith('// ==UserScript==')||!scriptText.includes('// @version      2.4.0'))throw new Error('Userscript 校验失败');code.value=scriptText;document.getElementById('lines').textContent=scriptText.split('\n').length.toLocaleString();document.getElementById('size').textContent=(new Blob([scriptText]).size/1024).toFixed(1)+' KB';statusEl.textContent='V2.4.0 代码已就绪';statusEl.className='status ok';copy.disabled=select.disabled=save.disabled=false}catch(e){console.error(e);code.value='脚本读取失败：'+e.message+'\n\n请按 Command + Shift + R 强制刷新后重试。';statusEl.textContent='读取失败';statusEl.className='status err'}}
+async function load(){try{
+  const chunks=[];
+  let total=0;
+  for(let i=0;i<8;i++){
+    const r=await fetch(`./script-v240-${i}.b64?v=2401`,{cache:'no-store'});
+    if(!r.ok)throw new Error(`payload ${i}: HTTP ${r.status}`);
+    let part=(await r.text()).replace(/^\uFEFF/,'').replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
+    if(!/^[A-Za-z0-9+/]*={0,2}$/.test(part))throw new Error(`payload ${i} 包含非法 Base64 字符`);
+    part=part.replace(/=+$/,'');
+    part+='='.repeat((4-part.length%4)%4);
+    const raw=atob(part);
+    const bytes=new Uint8Array(raw.length);
+    for(let j=0;j<raw.length;j++)bytes[j]=raw.charCodeAt(j);
+    chunks.push(bytes);total+=bytes.length;
+  }
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length}
+  if(typeof DecompressionStream!=='function')throw new Error('当前浏览器不支持脚本解压，请使用最新版 Chrome / Edge / Safari');
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  scriptText=await new Response(stream).text();
+  if(!scriptText.startsWith('// ==UserScript==')||!scriptText.includes('// @version      2.4.0'))throw new Error('Userscript 校验失败');
+  code.value=scriptText;
+  document.getElementById('lines').textContent=scriptText.split('\n').length.toLocaleString();
+  document.getElementById('size').textContent=(new Blob([scriptText]).size/1024).toFixed(1)+' KB';
+  statusEl.textContent='V2.4.0 代码已就绪';statusEl.className='status ok';copy.disabled=select.disabled=save.disabled=false
+}catch(e){console.error(e);code.value='脚本读取失败：'+e.message+'\n\n请按 Command + Shift + R 强制刷新后重试。';statusEl.textContent='读取失败';statusEl.className='status err'}}
 copy.onclick=async()=>{if(!scriptText)return;try{await navigator.clipboard.writeText(scriptText)}catch(_){code.focus();code.select();document.execCommand('copy')}copy.textContent='已复制';statusEl.textContent='已复制，可粘贴到 Tampermonkey';setTimeout(()=>copy.textContent='复制全部代码',1400)};
 select.onclick=()=>{code.focus();code.select();statusEl.textContent='代码已全选'};
 save.onclick=()=>{if(!scriptText)return;const u=URL.createObjectURL(new Blob([scriptText],{type:'text/javascript;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='universal_qidian_reader_v2.4.0.user.js';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1200)};
