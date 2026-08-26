@@ -3,120 +3,44 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>通用小说阅读器 V2.2.1</title>
+<title>通用小说阅读器 V2.3.0</title>
 <style>
 :root{--bg:#f5f3ee;--card:#fff;--text:#252525;--muted:#77736b;--line:#e4ded4;--accent:#c6352b;--code:#171717}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.wrap{width:min(1180px,calc(100% - 32px));margin:36px auto 60px}.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}.top h1{margin:0;font-size:28px}.sub{margin-top:8px;color:var(--muted);font-size:14px}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 15px;border-radius:8px;font-weight:600;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn:disabled{opacity:.45;cursor:not-allowed}.meta{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0}.tag{padding:6px 9px;background:#fff;border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:12px}.panel{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--card)}.bar{min-height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--line)}.status{color:var(--muted);font-size:13px}.ok{color:#25824d}.err{color:#b42318}textarea{display:block;width:100%;height:70vh;min-height:520px;resize:vertical;border:0;outline:0;padding:20px 22px;background:var(--code);color:#ddd;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;white-space:pre}.features{margin-top:15px;padding:15px 18px;background:#fff;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:13px;line-height:1.9}.features b{color:var(--text)}@media(max-width:720px){.wrap{width:calc(100% - 20px);margin-top:20px}.top{align-items:flex-start;flex-direction:column}.top h1{font-size:22px}.bar{align-items:flex-start;flex-direction:column;padding:12px}textarea{min-height:60vh}}
 </style>
 </head>
 <body>
 <main class="wrap">
-<div class="top"><div><h1>通用小说阅读器 V2.2.1</h1><div class="sub">修复老式小说站后台章节解析 · 无刷新切章 · 自动连续阅读</div></div><div class="actions"><button class="btn primary" id="copy" disabled>复制全部代码</button><button class="btn" id="select" disabled>全选代码</button><button class="btn" id="save" disabled>保存 .user.js</button></div></div>
-<div class="meta"><span class="tag">版本 <b>2.2.1</b></span><span class="tag">行数 <b id="lines">读取中</b></span><span class="tag">大小 <b id="size">读取中</b></span><span class="tag">Tampermonkey / Violentmonkey</span></div>
-<section class="panel"><div class="bar"><strong>完整 Userscript</strong><span class="status" id="status">正在生成 V2.2.1…</span></div><textarea id="code" readonly spellcheck="false">正在读取脚本…</textarea></section>
-<div class="features"><b>V2.2.1 修复：</b>后台加载下一章时不再只依赖 div / #content 等常规容器；如果原始 HTML 使用旧式 table、br 或非标准结构，会从整份文档的文本节点中按“章节标题 → 正文 → 底部导航”恢复正文。自动下一章加载失败后也不会高频无限重试。</div>
+<div class="top"><div><h1>通用小说阅读器 V2.3.0</h1><div class="sub">起点阅读页视觉重构 · 925px 版心 · 20px 正文 · 1.8 行高</div></div><div class="actions"><button class="btn primary" id="copy" disabled>复制全部代码</button><button class="btn" id="select" disabled>全选代码</button><button class="btn" id="save" disabled>保存 .user.js</button></div></div>
+<div class="meta"><span class="tag">版本 <b>2.3.0</b></span><span class="tag">行数 <b id="lines">读取中</b></span><span class="tag">大小 <b id="size">读取中</b></span><span class="tag">Tampermonkey / Violentmonkey</span></div>
+<section class="panel"><div class="bar"><strong>完整 Userscript</strong><span class="status" id="status">正在读取 V2.3.0…</span></div><textarea id="code" readonly spellcheck="false">正在读取脚本…</textarea></section>
+<div class="features"><b>V2.3.0 更新：</b>按照起点阅读页重新校准正文视觉。默认 925px 版心、20px 正文、1.8 行高、0.8em 段距与 2em 首行缩进；重做牛皮纸背景、章节标题、正文起始位置和右侧工具栏，并增加“返回顶部”和“恢复起点默认样式”。首次从旧版升级时会自动恢复新的视觉基准，但不会清除书架、书签、阅读进度和目录缓存。</div>
 </main>
 <script>
+const CHUNKS=['script-v230-0.b64','script-v230-1.b64','script-v230-2.b64','script-v230-3.b64','script-v230-4.b64','script-v230-5.b64'];
 const code=document.getElementById('code'),statusEl=document.getElementById('status'),copy=document.getElementById('copy'),select=document.getElementById('select'),save=document.getElementById('save');let scriptText='';
-function replaceBetween(src,start,end,replacement){const a=src.indexOf(start);if(a<0)throw new Error('补丁起点未找到：'+start);const b=src.indexOf(end,a);if(b<0)throw new Error('补丁终点未找到：'+end);return src.slice(0,a)+replacement+src.slice(b)}
-function patchScript(src){
- src=src.replace('// @version      2.2.0','// @version      2.2.1');
- src=src.replace("const candidates = preferred.length ? preferred : [...doc.querySelectorAll('div')].slice(0, 1500);","const candidates = preferred.length ? preferred : [...doc.querySelectorAll('div, td, pre, section')].slice(0, 2000);");
- const start='    function extractPageFromDocument(doc, pageUrl, fallbackData = null) {';
- const end='\n    function rememberChapterData(data) {';
- const replacement=`    function collectReadableTextNodes(doc) {
-        const body = doc?.body;
-        if (!body) return [];
-        const lines = [];
-        const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
-            acceptNode(node) {
-                const parent = node.parentElement;
-                if (!parent) return NodeFilter.FILTER_REJECT;
-                if (/^(SCRIPT|STYLE|NOSCRIPT|OPTION|SELECT|TEXTAREA|BUTTON)$/i.test(parent.tagName)) return NodeFilter.FILTER_REJECT;
-                return normalizeText(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-            }
-        });
-        let node;
-        while ((node = walker.nextNode())) {
-            const value = normalizeText(node.nodeValue || '');
-            if (value) lines.push(value);
-        }
-        return lines;
-    }
-
-    function extractChapterLinesFromWholeDocument(doc, chapter, bookTitle) {
-        const nodes = collectReadableTextNodes(doc);
-        if (!nodes.length) return [];
-        const c = String(chapter || '').replace(/\\s/g, '');
-        const b = String(bookTitle || '').replace(/\\s/g, '');
-        const hits = [];
-        for (let i = 0; i < Math.min(nodes.length, 180); i++) {
-            const compact = nodes[i].replace(/\\s/g, '');
-            if (c && (compact === c || compact.endsWith(c) || (b && compact === b + c))) hits.push(i);
-        }
-        const startIndex = hits.length ? hits[hits.length - 1] + 1 : 0;
-        const result = [];
-        let chars = 0;
-        for (let i = startIndex; i < nodes.length; i++) {
-            const line = normalizeText(nodes[i]);
-            if (!line || isChapterDuplicate(line, chapter, bookTitle)) continue;
-            const compact = line.replace(/\\s/g, '');
-            if (isNavigationLine(line)) {
-                if (chars >= 180) break;
-                continue;
-            }
-            if (/^(繁體中文|选择背景颜色|选择字体大小|收藏本书|加入书架|加入书签|推荐本书)$/i.test(compact)) continue;
-            if (chars >= 180 && /^(返回顶部|我的藏书架|将本书加入书架|章节错误|点此举报)/.test(compact)) break;
-            result.push(line);
-            chars += line.replace(/\\s+/g, '').length;
-            if (chars > 50000) break;
-        }
-        if (chars < 180 && !hits.length) {
-            return nodes.filter(line => {
-                const compact = line.replace(/\\s/g, '');
-                return compact.length >= 12 && !isNavigationLine(line) && !/登录|注册|书架|目录|排行榜|推荐本书|章节错误|广告/.test(compact);
-            });
-        }
-        return result;
-    }
-
-    function extractPageFromDocument(doc, pageUrl, fallbackData = null) {
-        const rule = chooseRuleForUrl(pageUrl);
-        const chapter = deriveChapterFromDoc(doc, rule);
-        const breadcrumbs = extractBreadcrumbsFromDoc(doc);
-        const bookTitle = deriveBookTitleFromDoc(doc, rule, chapter, breadcrumbs, fallbackData?.bookTitle || '');
-        const author = deriveAuthorFromDoc(doc, fallbackData?.author || '');
-        let contentEl = firstElementInDoc(doc, rule.content);
-        if (!contentEl || normalizeText(contentEl.textContent).length < 180) contentEl = findBestGenericContentInDoc(doc);
-        let lines = contentEl ? sanitizeLines(contentEl.textContent || '', chapter, bookTitle) : [];
-        let plainContent = lines.join('\\n');
-        if (plainContent.replace(/\\s+/g, '').length < 180) {
-            lines = sanitizeLines(extractChapterLinesFromWholeDocument(doc, chapter, bookTitle).join('\\n'), chapter, bookTitle);
-            plainContent = lines.join('\\n');
-        }
-        if (plainContent.replace(/\\s+/g, '').length < 180) return { ok:false, reason:'没有识别到足够长的小说正文（页面标题：'+normalizeText(doc.title || '未知')+'，正文候选：'+plainContent.length+' 字符）。' };
-        const contentHTML = lines.map(line => '<p>'+escapeHTML(line)+'</p>').join('');
-        const sitePrev = findByKeywordsInDoc(doc, pageUrl, ['上一章','上章','上一页'], rule.prev);
-        const siteNext = findByKeywordsInDoc(doc, pageUrl, ['下一章','下章','下一页'], rule.next);
-        const catalogUrlHint = findByKeywordsInDoc(doc, pageUrl, ['返回目录','章节目录','目录'], rule.catalog);
-        const bookPage = findByKeywordsInDoc(doc, pageUrl, ['返回书页','书页','书籍详情'], []);
-        const cleanBreadcrumbs = breadcrumbs.filter(item => item !== chapter && item !== bookTitle).slice(-3);
-        let host = location.hostname;
-        try { host = new URL(pageUrl).hostname; } catch (_) {}
-        return { ok:true, ruleName:rule.name || '通用识别', bookTitle:bookTitle || fallbackData?.bookTitle || '当前小说', chapter, author, publishTime:derivePublishTimeFromDoc(doc), contentHTML, wordCount:countReadableChars(plainContent), sitePrev, siteNext, prev:sitePrev, next:siteNext, catalogUrlHint, catalog:catalogUrlHint, bookPage, breadcrumbs:cleanBreadcrumbs, sourceUrl:new URL(pageUrl, location.href).href, sourceHost:host, bookRoot:getBookRootUrl(pageUrl), catalogChapters:fallbackData?.catalogChapters || [], catalogIndex:-1, navigationSource:'site-fallback' };
-    }
-`;
- src=replaceBetween(src,start,end,replacement);
- src=src.replace("        chapterData: new Map(),\n        lastActiveUrl: location.href\n    };","        chapterData: new Map(),\n        lastActiveUrl: location.href,\n        autoAppendFailures: new Map()\n    };");
- src=src.replace("        const nextUrl = lastData?.next;\n        if (!nextUrl || findLoadedChapterElement(root, nextUrl)) return;\n\n        readerState.appendBusy = true;","        const nextUrl = lastData?.next;\n        if (!nextUrl || findLoadedChapterElement(root, nextUrl)) return;\n        const failedUntil = Number(readerState.autoAppendFailures.get(canonicalUrl(nextUrl)) || 0);\n        if (failedUntil > Date.now()) return;\n\n        readerState.appendBusy = true;");
- src=src.replace("        } catch (error) {\n            console.warn('[QDR] 自动下一章加载失败：', error);\n        } finally {\n            readerState.appendBusy = false;\n            hideLoading(root);\n            if (getSettings().autoNext) {\n                setTimeout(() => maybeAutoAppend(root), 60);\n            }\n        }","        } catch (error) {\n            console.warn('[QDR] 自动下一章加载失败：', error);\n            readerState.autoAppendFailures.set(canonicalUrl(nextUrl), Date.now() + 30000);\n            showToast(root, '下一章自动加载失败，30秒后可重试');\n        } finally {\n            readerState.appendBusy = false;\n            hideLoading(root);\n            if (getSettings().autoNext) setTimeout(() => maybeAutoAppend(root), 350);\n        }");
- if(!src.includes('// @version      2.2.1'))throw new Error('版本补丁失败');
- if(!src.includes('extractChapterLinesFromWholeDocument'))throw new Error('正文恢复补丁失败');
- return src;
+async function decodePayload(payload){
+  const bytes=Uint8Array.from(atob(payload),c=>c.charCodeAt(0));
+  if(typeof DecompressionStream!=='function')throw new Error('当前浏览器不支持脚本解压，请使用最新版 Chrome / Edge / Safari');
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return await new Response(stream).text();
 }
-async function load(){try{const r=await fetch('./universal_qidian_reader_v2.2.user.js?v=2211',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);let base=await r.text();if(!base.startsWith('// ==UserScript=='))throw new Error('Userscript 头校验失败');scriptText=patchScript(base);code.value=scriptText;document.getElementById('lines').textContent=scriptText.split('\n').length.toLocaleString();document.getElementById('size').textContent=(new Blob([scriptText]).size/1024).toFixed(1)+' KB';statusEl.textContent='V2.2.1 代码已就绪';statusEl.className='status ok';copy.disabled=select.disabled=save.disabled=false}catch(e){console.error(e);code.value='脚本生成失败：'+e.message+'\n\n请按 Command + Shift + R 强制刷新后重试。';statusEl.textContent='生成失败';statusEl.className='status err'}}
+async function load(){
+  try{
+    const parts=await Promise.all(CHUNKS.map(async f=>{const r=await fetch('./'+f+'?v=2300',{cache:'no-store'});if(!r.ok)throw new Error(f+' HTTP '+r.status);return (await r.text()).trim()}));
+    scriptText=await decodePayload(parts.join(''));
+    if(!scriptText.startsWith('// ==UserScript==')||!scriptText.includes('// @version      2.3.0'))throw new Error('Userscript 校验失败');
+    code.value=scriptText;
+    document.getElementById('lines').textContent=scriptText.split('\n').length.toLocaleString();
+    document.getElementById('size').textContent=(new Blob([scriptText]).size/1024).toFixed(1)+' KB';
+    statusEl.textContent='V2.3.0 代码已就绪';statusEl.className='status ok';
+    copy.disabled=select.disabled=save.disabled=false;
+  }catch(e){
+    console.error(e);code.value='脚本读取失败：'+e.message+'\n\n请强制刷新后重试。';statusEl.textContent='读取失败';statusEl.className='status err';
+  }
+}
 copy.onclick=async()=>{if(!scriptText)return;try{await navigator.clipboard.writeText(scriptText)}catch(_){code.focus();code.select();document.execCommand('copy')}copy.textContent='已复制';statusEl.textContent='已复制，可粘贴到 Tampermonkey';setTimeout(()=>copy.textContent='复制全部代码',1400)};
 select.onclick=()=>{code.focus();code.select();statusEl.textContent='代码已全选'};
-save.onclick=()=>{if(!scriptText)return;const u=URL.createObjectURL(new Blob([scriptText],{type:'text/javascript;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='universal_qidian_reader_v2.2.1.user.js';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1200)};
+save.onclick=()=>{if(!scriptText)return;const u=URL.createObjectURL(new Blob([scriptText],{type:'text/javascript;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='universal_qidian_reader_v2.3.0.user.js';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1200)};
 load();
 </script>
 </body>
