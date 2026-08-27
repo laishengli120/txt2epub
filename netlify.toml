@@ -1,5 +1,5 @@
 [build]
-  command = "node scripts/build-qidian-reader.js"
+  command = "node scripts/build-qidian-reader.js && node scripts/patch-qidian-v244.js"
   publish = "."
 
 [functions]
