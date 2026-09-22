@@ -6230,15 +6230,10 @@
             }
             async function createZipObjectUrl(path) {
                 if (!state.zip) return '';
-                var entry = state.zip.file(path);
-                if (!entry) {
-                    try {
-                        var decoded = decodeURIComponent(path);
-                        entry = state.zip.file(decoded);
-                        if (entry) path = decoded;
-                    } catch (e) {}
-                }
+                var actualPath = resolveExistingZipPath(path) || path;
+                var entry = state.zip.file(actualPath);
                 if (!entry) return '';
+                path = actualPath;
                 var buffer = await entry.async('arraybuffer');
                 var url = URL.createObjectURL(new Blob([buffer], { type: previewMime(path) }));
                 state.chapterPreviewUrls.push(url);
@@ -6297,32 +6292,142 @@
                 }
                 return map;
             }
+            /* EPUB_PREVIEW_DISCOVERY_FIX_2026 */
+            function zipFileNames() {
+                return state.zip ? Object.keys(state.zip.files || {}).filter(function (name) {
+                    return state.zip.files[name] && !state.zip.files[name].dir;
+                }) : [];
+            }
+            function decodePathSafe(path) {
+                var current = String(path || '');
+                for (var i = 0; i < 2; i++) {
+                    try {
+                        var decoded = decodeURIComponent(current);
+                        if (decoded === current) break;
+                        current = decoded;
+                    } catch (e) { break; }
+                }
+                return normalizePath(current);
+            }
+            function resolveExistingZipPath(path) {
+                if (!state.zip) return '';
+                var normalized = normalizePath(path);
+                if (state.zip.file(normalized)) return normalized;
+
+                var decoded = decodePathSafe(normalized);
+                if (decoded && state.zip.file(decoded)) return decoded;
+
+                var names = zipFileNames();
+                var lower = normalized.toLowerCase();
+                var decodedLower = decoded.toLowerCase();
+
+                var exactCaseInsensitive = names.find(function (name) {
+                    return normalizePath(name).toLowerCase() === lower ||
+                           normalizePath(name).toLowerCase() === decodedLower;
+                });
+                if (exactCaseInsensitive) return exactCaseInsensitive;
+
+                var targetTail = decodedLower.split('/').pop();
+                if (targetTail) {
+                    var tailMatches = names.filter(function (name) {
+                        return decodePathSafe(name).toLowerCase().split('/').pop() === targetTail;
+                    });
+                    if (tailMatches.length === 1) return tailMatches[0];
+                }
+                return '';
+            }
+            function isLikelyDocumentItem(item, href, resolvedPath) {
+                var media = ((item && item.getAttribute('media-type')) || '').toLowerCase();
+                var candidate = (href || resolvedPath || '').toLowerCase();
+                if (/(?:xhtml?|html?)$/.test(candidate.split(/[?#]/)[0])) return true;
+                if (media.indexOf('xhtml') >= 0 || media.indexOf('html') >= 0) return true;
+                if (media === 'application/xml' || media === 'text/xml') {
+                    return /\.(?:xhtml?|html?|xml)$/i.test(candidate);
+                }
+                return false;
+            }
+            function isUtilityDocument(path, item) {
+                var lower = decodePathSafe(path).toLowerCase();
+                var id = ((item && item.getAttribute('id')) || '').toLowerCase();
+                var props = ((item && item.getAttribute('properties')) || '').toLowerCase();
+                if (props.split(/\s+/).indexOf('nav') >= 0) return true;
+                return /(?:^|\/)(?:nav|toc|contents?|cover|title[-_ ]?page|copyright|colophon)(?:[_.\/-]|$)/i.test(lower) ||
+                       /^(?:nav|toc|cover|titlepage|copyright)$/i.test(id);
+            }
+            function makeSpineEntry(item, idref, href, path, index, tocMap) {
+                var fallbackRaw = ((href || path).split('/').pop() || ('章节 ' + (index + 1))).replace(/\.(?:xhtml?|html?|xml)$/i, '');
+                var fallback = fallbackRaw;
+                try { fallback = decodeURIComponent(fallbackRaw); } catch (e) {}
+                return {
+                    index: index,
+                    idref: idref || (item && item.getAttribute('id')) || '',
+                    item: item || null,
+                    href: href || path,
+                    path: path,
+                    label: tocMap[path] || tocMap[normalizePath(state.opfDir + (href || ''))] || fallback || ('章节 ' + (index + 1))
+                };
+            }
             async function buildSpineEntries() {
-                if (!state.opfDoc) return [];
+                if (!state.opfDoc || !state.zip) return [];
                 var tocMap = await extractExistingTocMap();
                 var spine = getSpineElement();
-                if (!spine) return [];
                 var entries = [];
-                localElements(spine, 'itemref').forEach(function (itemref, index) {
-                    var idref = itemref.getAttribute('idref') || '';
-                    var item = findManifestItemById(state.opfDoc, idref);
-                    if (!item) return;
-                    var media = (item.getAttribute('media-type') || '').toLowerCase();
-                    if (media && media.indexOf('html') < 0 && media.indexOf('xhtml') < 0) return;
-                    var href = item.getAttribute('href') || '';
-                    var path = resolvePath(state.opfDir, href);
-                    var fallbackRaw = (href.split('/').pop() || ('章节 ' + (index + 1))).replace(/\.(xhtml?|html?)$/i, '');
-                    var fallback = fallbackRaw;
-                    try { fallback = decodeURIComponent(fallbackRaw); } catch (e) {}
-                    entries.push({
-                        index: entries.length,
-                        idref: idref,
-                        item: item,
-                        href: href,
-                        path: path,
-                        label: tocMap[path] || fallback || ('章节 ' + (entries.length + 1))
+                var seen = Object.create(null);
+
+                function pushEntry(item, idref, href, rawPath, allowUtility) {
+                    var resolved = resolveExistingZipPath(rawPath || resolvePath(state.opfDir, href || ''));
+                    if (!resolved || seen[resolved]) return false;
+                    if (!isLikelyDocumentItem(item, href, resolved)) return false;
+                    if (!allowUtility && isUtilityDocument(resolved, item)) return false;
+                    seen[resolved] = true;
+                    entries.push(makeSpineEntry(item, idref, href, resolved, entries.length, tocMap));
+                    return true;
+                }
+
+                // 1. Standard EPUB reading order: OPF spine -> manifest.
+                if (spine) {
+                    localElements(spine, 'itemref').forEach(function (itemref) {
+                        var idref = (itemref.getAttribute('idref') || '').trim();
+                        var item = findManifestItemById(state.opfDoc, idref);
+                        if (!item) return;
+                        var href = item.getAttribute('href') || '';
+                        pushEntry(item, idref, href, resolvePath(state.opfDir, href), false);
                     });
-                });
+                }
+
+                // 2. Some EPUBs declare unusual media-types. Trust spine + real HTML-like file extension.
+                if (!entries.length && spine) {
+                    localElements(spine, 'itemref').forEach(function (itemref) {
+                        var idref = (itemref.getAttribute('idref') || '').trim();
+                        var item = findManifestItemById(state.opfDoc, idref);
+                        if (!item) return;
+                        var href = item.getAttribute('href') || '';
+                        var rawPath = resolvePath(state.opfDir, href);
+                        var resolved = resolveExistingZipPath(rawPath);
+                        if (!resolved || seen[resolved] || isUtilityDocument(resolved, item)) return;
+                        if (!/\.(?:xhtml?|html?|xml)$/i.test(resolved)) return;
+                        seen[resolved] = true;
+                        entries.push(makeSpineEntry(item, idref, href, resolved, entries.length, tocMap));
+                    });
+                }
+
+                // 3. Broken/missing spine: use manifest document items in manifest order.
+                if (!entries.length) {
+                    manifestItems(state.opfDoc).forEach(function (item) {
+                        var href = item.getAttribute('href') || '';
+                        pushEntry(item, item.getAttribute('id') || '', href, resolvePath(state.opfDir, href), false);
+                    });
+                }
+
+                // 4. Last resort: scan the EPUB archive for XHTML/HTML files.
+                if (!entries.length) {
+                    zipFileNames().forEach(function (path) {
+                        if (!/\.(?:xhtml?|html?)$/i.test(path) || isUtilityDocument(path, null) || seen[path]) return;
+                        seen[path] = true;
+                        entries.push(makeSpineEntry(null, '', path, path, entries.length, tocMap));
+                    });
+                }
+
                 return entries;
             }
             function populatePreviewChapterSelect() {
@@ -6427,11 +6532,15 @@
                     select.dispatchEvent(new Event('change', { bubbles:true }));
                 }
 
-                var zipEntry = state.zip.file(entry.path);
+                var actualPath = resolveExistingZipPath(entry.path) || entry.path;
+                var zipEntry = state.zip.file(actualPath);
                 if (!zipEntry) {
+                    var infoMissing = el('epubPreviewInfo');
+                    if (infoMissing) infoMissing.textContent = '无法读取章节文件：' + entry.path;
                     setStatus('无法读取预览章节：' + entry.path, 'error');
                     return;
                 }
+                entry.path = actualPath;
                 clearChapterPreviewUrls();
                 try {
                     var source = await zipEntry.async('text');
@@ -6462,7 +6571,7 @@
                             continue;
                         }
                         var imagePath = resolvePath(dirname(entry.path), src);
-                        var imageUrl = await createZipObjectUrl(imagePath);
+                        var imageUrl = await createZipObjectUrl(resolveExistingZipPath(imagePath) || imagePath);
                         if (imageUrl) img.setAttribute('src', imageUrl);
                         else img.removeAttribute('src');
                     }
@@ -6973,6 +7082,7 @@
                     el('epubEditResourceCount').textContent = manifestItems(state.opfDoc).length;
 
                     state.spineEntries = await buildSpineEntries();
+                    if (el('epubEditChapterCount')) el('epubEditChapterCount').textContent = state.spineEntries.length;
                     state.previewIndex = 0;
                     state.tocCandidates = [];
                     state.tocRebuildEnabled = false;
@@ -7001,9 +7111,20 @@
                     el('epubEditWorkspace').style.display = 'block';
                     el('epubResetBtn').style.display = 'inline-flex';
                     if (exportBtn) exportBtn.disabled = false;
-                    setStatus('EPUB 已读取，可预览正文、精校样式或重新识别目录。');
                     if (state.spineEntries.length) {
-                        renderPreviewChapter(0);
+                        setStatus('EPUB 已读取，已找到 ' + state.spineEntries.length + ' 个可预览正文文件。');
+                        await renderPreviewChapter(0);
+                    } else {
+                        var placeholder = el('epubPreviewPlaceholder');
+                        if (placeholder) {
+                            placeholder.style.display = 'flex';
+                            var strong = placeholder.querySelector('strong');
+                            var span = placeholder.querySelector('span');
+                            if (strong) strong.textContent = '未找到可预览正文';
+                            if (span) span.textContent = 'EPUB 已加载，但没有识别到 HTML/XHTML 正文文件。';
+                        }
+                        if (el('epubPreviewInfo')) el('epubPreviewInfo').textContent = '未识别到正文文件，请尝试重新识别目录或检查 EPUB 结构。';
+                        setStatus('EPUB 已读取，但没有找到可预览正文文件。', 'error');
                     }
                 } catch (error) {
                     console.error(error);
