@@ -2402,6 +2402,27 @@
             display: none !important;
         }
 
+
+        /* --- Memphis Select Stacking Fix 2026-09-22 --- */
+        html[data-ui-theme="memphis"] .memphis-select-ui.is-open {
+            z-index: 1200;
+        }
+
+        html[data-ui-theme="memphis"] .form-group:has(.memphis-select-ui.is-open),
+        html[data-ui-theme="memphis"] .online-source-selection:has(.memphis-select-ui.is-open) {
+            position: relative;
+            z-index: 1100;
+        }
+
+        html[data-ui-theme="memphis"] .settings-body {
+            position: relative;
+            isolation: isolate;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-menu {
+            z-index: 1300;
+        }
+
     </style>
 </head>
 <body>
