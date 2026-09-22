@@ -2034,6 +2034,168 @@
             }
         }
 
+
+        /* --- Memphis Minimal Form Controls 2026-09-22 --- */
+        html[data-ui-theme="memphis"] input.form-control {
+            min-height: 42px;
+            padding: 8px 2px 7px;
+            color: var(--memphis-dark);
+            background: transparent;
+            border: 0;
+            border-bottom: 2px solid rgba(24,24,27,.42);
+            border-radius: 0;
+            box-shadow: none;
+            outline: none;
+            transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+        }
+
+        html[data-ui-theme="memphis"] input.form-control::placeholder {
+            color: rgba(24,24,27,.42);
+        }
+
+        html[data-ui-theme="memphis"] input.form-control:hover {
+            background: transparent;
+            border-color: rgba(24,24,27,.72);
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="memphis"] input.form-control:focus {
+            background: transparent;
+            border-color: var(--memphis-primary);
+            box-shadow: 0 3px 0 rgba(255,95,87,.12);
+            transform: none;
+        }
+
+        html[data-ui-theme="memphis"] select.form-control {
+            min-height: 42px;
+            padding: 9px 44px 9px 12px;
+            color: var(--memphis-dark);
+            background-color: var(--memphis-white);
+            background-image: none !important;
+            border: 2px solid var(--memphis-dark);
+            border-radius: 8px;
+            box-shadow: 3px 3px 0 var(--memphis-dark);
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background-color .16s ease;
+        }
+
+        html[data-ui-theme="memphis"] select.form-control:hover {
+            background-color: #fffdf8;
+            transform: translate(-1px,-1px);
+            box-shadow: 4px 4px 0 var(--memphis-dark);
+        }
+
+        html[data-ui-theme="memphis"] select.form-control:focus {
+            border-color: var(--memphis-primary);
+            background-color: var(--memphis-white);
+            box-shadow: 3px 3px 0 var(--memphis-dark), 0 0 0 3px rgba(103,216,239,.28);
+            transform: none;
+        }
+
+        html[data-ui-theme="memphis"] .custom-select-shell {
+            position: relative;
+            width: 100%;
+        }
+
+        html[data-ui-theme="memphis"] .custom-select-arrow {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            width: 10px;
+            height: 10px;
+            border-right: 2px solid var(--memphis-dark);
+            border-bottom: 2px solid var(--memphis-dark);
+            transform: translateY(-68%) rotate(45deg);
+            pointer-events: none;
+            transition: transform .16s ease;
+        }
+
+        html[data-ui-theme="memphis"] .custom-select-shell:focus-within .custom-select-arrow {
+            transform: translateY(-36%) rotate(225deg);
+        }
+
+        html[data-ui-theme="memphis"] .cover-source-options {
+            align-items: flex-start;
+            gap: 10px 14px;
+        }
+
+        html[data-ui-theme="memphis"] .cover-source-option {
+            padding: 0;
+            border-radius: 0;
+            background: transparent;
+        }
+
+        html[data-ui-theme="memphis"] .cover-source-option:hover {
+            background: transparent;
+            transform: none;
+        }
+
+        html[data-ui-theme="memphis"] .cover-search-option {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            min-width: 100%;
+        }
+
+        html[data-ui-theme="memphis"] .radio-option-main {
+            display: flex;
+            align-items: center;
+            min-height: 28px;
+        }
+
+        html[data-ui-theme="memphis"] .online-source-selection {
+            width: 100%;
+            margin-top: 10px;
+            padding-left: 28px;
+        }
+
+        html[data-ui-theme="memphis"] .online-source-selection > label {
+            margin-bottom: 6px;
+            color: var(--memphis-muted);
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: none;
+        }
+
+        html[data-ui-theme="classic"] .cover-source-options {
+            align-items: flex-start;
+        }
+
+        html[data-ui-theme="classic"] .cover-search-option {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            min-width: 100%;
+        }
+
+        html[data-ui-theme="classic"] .radio-option-main {
+            display: flex;
+            align-items: center;
+        }
+
+        html[data-ui-theme="classic"] .online-source-selection {
+            width: 100%;
+            margin-top: 8px;
+            padding-left: 25px;
+        }
+
+        html[data-ui-theme="classic"] .online-source-selection > label {
+            margin-bottom: 6px;
+        }
+
+        html[data-ui-theme="classic"] .custom-select-shell {
+            position: relative;
+            width: 100%;
+        }
+
+        html[data-ui-theme="classic"] .custom-select-arrow {
+            display: none;
+        }
+
     </style>
 </head>
 <body>
@@ -2077,30 +2239,39 @@
                             <label for="bookAuthor">作者</label>
                             <input type="text" id="bookAuthor" class="form-control" placeholder="例如：耳根">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group cover-source-group">
                             <label>封面来源</label>
-                            <div class="radio-group">
-                                <div class="radio-option">
-                                    <input type="radio" id="coverSearch" name="coverOption" value="search" checked>
-                                    <label for="coverSearch">在线搜索</label> </div>
-                                <div class="radio-option">
-                                    <input type="radio" id="coverUpload" name="coverOption" value="upload">
-                                    <label for="coverUpload">本地上传</label>
+                            <div class="radio-group cover-source-options">
+                                <div class="radio-option cover-source-option cover-search-option">
+                                    <div class="radio-option-main">
+                                        <input type="radio" id="coverSearch" name="coverOption" value="search" checked>
+                                        <label for="coverSearch">在线搜索</label>
+                                    </div>
+                                    <div id="onlineSourceSelectionArea" class="online-source-selection" style="display: none;">
+                                        <label for="onlineSourceSelect">选择在线来源</label>
+                                        <div class="custom-select-shell">
+                                            <select id="onlineSourceSelect" class="form-control">
+                                                <option value="起点网" selected>起点小说 (小说类推荐)</option>
+                                                <option value="openlibrary">Open Library (综合/外文)</option>
+                                                <option value="googlebooks">Google Books (综合/需API Key)</option>
+                                            </select>
+                                            <span class="custom-select-arrow" aria-hidden="true"></span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="radio-option">
-                                    <input type="radio" id="coverNone" name="coverOption" value="none">
-                                    <label for="coverNone">无封面</label>
+                                <div class="radio-option cover-source-option">
+                                    <div class="radio-option-main">
+                                        <input type="radio" id="coverUpload" name="coverOption" value="upload">
+                                        <label for="coverUpload">本地上传</label>
+                                    </div>
+                                </div>
+                                <div class="radio-option cover-source-option">
+                                    <div class="radio-option-main">
+                                        <input type="radio" id="coverNone" name="coverOption" value="none">
+                                        <label for="coverNone">无封面</label>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div id="onlineSourceSelectionArea" class="form-group" style="display: none; margin-left: 20px;">
-                            <label for="onlineSourceSelect">选择在线来源:</label>
-                            <select id="onlineSourceSelect" class="form-control">
-                                <option value="起点网" selected>起点小说 (小说类推荐)</option>
-                                <option value="openlibrary">Open Library (综合/外文)</option>
-                                <option value="googlebooks">Google Books (综合/需API Key)</option>
-                                </select>
                         </div>
                         
                         <div id="coverUploadArea" style="display: none;">
