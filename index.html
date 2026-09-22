@@ -1984,6 +1984,56 @@
             html[data-ui-theme="classic"] .theme-toggle-btn { width: 36px; padding: 0; }
         }
 
+
+        /* --- Theme Switch & Layout Repair 2026-09-22 --- */
+        .header::before,
+        .header::after {
+            pointer-events: none;
+        }
+
+        .header-actions {
+            position: relative;
+            z-index: 20;
+            pointer-events: auto;
+            flex-shrink: 0;
+        }
+
+        .theme-toggle-btn {
+            position: relative;
+            z-index: 21;
+            pointer-events: auto !important;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .main-content {
+            flex: 1 1 auto;
+            width: auto;
+            max-width: none;
+            min-width: 0;
+            margin-right: 0;
+        }
+
+        #uploadCard,
+        #dropArea {
+            width: 100%;
+            min-width: 0;
+        }
+
+        @media (min-width: 993px) {
+            .main-content {
+                margin-left: var(--sidebar-width);
+            }
+        }
+
+        @media (max-width: 992px) {
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -3775,67 +3825,6 @@
 
                     // 4. OEBPS/title.xhtml
                     oebps.file('title.xhtml', `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(options.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body class="title-page"><div id="title_page_main" class="book-title">${escapeXML(options.title)}</div><div class="author">${escapeXML(options.author)}</div>
-    <script>
-        (function () {
-            var THEME_KEY = 'txt2epub-ui-theme';
-            var root = document.documentElement;
-
-            function getTheme() {
-                return root.getAttribute('data-ui-theme') === 'classic' ? 'classic' : 'memphis';
-            }
-
-            function updateThemeButton(theme) {
-                var button = document.getElementById('themeToggleBtn');
-                if (!button) return;
-
-                var icon = button.querySelector('i');
-                var text = button.querySelector('.theme-toggle-text');
-                var isClassic = theme === 'classic';
-
-                if (icon) {
-                    icon.className = isClassic ? 'fas fa-shapes' : 'fas fa-layer-group';
-                }
-                if (text) {
-                    text.textContent = isClassic ? 'Memphis 风格' : '普通风格';
-                }
-
-                var targetName = isClassic ? 'Memphis 风格' : '普通风格';
-                button.setAttribute('aria-label', '切换到' + targetName);
-                button.setAttribute('title', '切换到' + targetName);
-            }
-
-            function applyTheme(theme, persist) {
-                var normalized = theme === 'classic' ? 'classic' : 'memphis';
-                root.setAttribute('data-ui-theme', normalized);
-                updateThemeButton(normalized);
-
-                if (persist) {
-                    try {
-                        localStorage.setItem(THEME_KEY, normalized);
-                    } catch (e) {}
-                }
-            }
-
-            function initThemeToggle() {
-                var button = document.getElementById('themeToggleBtn');
-                if (!button) return;
-
-                applyTheme(getTheme(), false);
-
-                button.addEventListener('click', function () {
-                    var nextTheme = getTheme() === 'classic' ? 'memphis' : 'classic';
-                    applyTheme(nextTheme, true);
-                });
-            }
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initThemeToggle);
-            } else {
-                initThemeToggle();
-            }
-        })();
-    </script>
-
 </body></html>`);
 
                     // 5. Cover Image and OEBPS/cover.xhtml (if cover exists)
@@ -4327,5 +4316,75 @@
             updateGoogleBooksOptionStatus();
         });
     </script>
+
+    <script id="uiThemeRuntime">
+        (function () {
+            var THEME_KEY = 'txt2epub-ui-theme';
+            var root = document.documentElement;
+
+            function getTheme() {
+                return root.getAttribute('data-ui-theme') === 'classic' ? 'classic' : 'memphis';
+            }
+
+            function updateThemeButton(theme) {
+                var button = document.getElementById('themeToggleBtn');
+                if (!button) return;
+
+                var icon = button.querySelector('i');
+                var label = button.querySelector('.theme-toggle-text');
+                var isClassic = theme === 'classic';
+                var targetName = isClassic ? 'Memphis 风格' : '普通风格';
+
+                if (icon) {
+                    icon.className = isClassic ? 'fas fa-shapes' : 'fas fa-layer-group';
+                }
+                if (label) {
+                    label.textContent = targetName;
+                }
+
+                button.setAttribute('aria-label', '切换到' + targetName);
+                button.setAttribute('title', '切换到' + targetName);
+                button.setAttribute('aria-pressed', isClassic ? 'true' : 'false');
+            }
+
+            function applyTheme(theme, persist) {
+                var normalized = theme === 'classic' ? 'classic' : 'memphis';
+                root.setAttribute('data-ui-theme', normalized);
+                updateThemeButton(normalized);
+
+                if (persist) {
+                    try {
+                        localStorage.setItem(THEME_KEY, normalized);
+                    } catch (e) {}
+                }
+            }
+
+            function initThemeToggle() {
+                var button = document.getElementById('themeToggleBtn');
+                if (!button || button.dataset.themeReady === '1') return;
+
+                button.dataset.themeReady = '1';
+                applyTheme(getTheme(), false);
+
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    var nextTheme = getTheme() === 'classic' ? 'memphis' : 'classic';
+                    applyTheme(nextTheme, true);
+                });
+            }
+
+            window.setTxt2EpubTheme = function (theme) {
+                applyTheme(theme, true);
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initThemeToggle, { once: true });
+            } else {
+                initThemeToggle();
+            }
+        })();
+    </script>
+
 </body>
 </html>
