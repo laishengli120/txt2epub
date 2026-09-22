@@ -2723,6 +2723,92 @@
             .epub-editor-actions .btn { width: 100%; }
         }
 
+
+        /* --- Desktop Mode Switch Visibility Fix 2026-09-22 --- */
+        /* The legacy rule ".header-actions button { display:none }" is only meant
+           for the hamburger button. Keep the app mode buttons visible everywhere. */
+        .header-actions .app-mode-btn {
+            display: inline-flex !important;
+            margin-left: 0;
+            padding: 5px 10px;
+            font-size: .76rem;
+            color: var(--memphis-dark);
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+        }
+
+        .header-actions .app-mode-btn:hover {
+            color: var(--memphis-dark);
+            background: rgba(103,216,239,.25);
+            border: 0;
+            box-shadow: none;
+        }
+
+        .header-actions .app-mode-btn.is-active {
+            background: var(--memphis-accent2);
+            box-shadow: inset 0 0 0 1px rgba(24,24,27,.1);
+        }
+
+        /* Only the sidebar hamburger follows the old desktop/mobile visibility rule. */
+        .header-actions #toggleSidebarBtn {
+            display: none;
+        }
+
+        @media (max-width: 992px) {
+            .header-actions .app-mode-btn {
+                display: inline-flex !important;
+                margin-left: 0;
+                padding: 5px 10px;
+                font-size: .76rem;
+                color: var(--memphis-dark);
+                background: transparent;
+                border: 0;
+                box-shadow: none;
+            }
+
+            .header-actions .app-mode-btn:hover {
+                color: var(--memphis-dark);
+                background: rgba(103,216,239,.25);
+                border: 0;
+                box-shadow: none;
+            }
+
+            .header-actions .app-mode-btn.is-active {
+                background: var(--memphis-accent2);
+                box-shadow: inset 0 0 0 1px rgba(24,24,27,.1);
+            }
+
+            .header-actions #toggleSidebarBtn {
+                display: inline-flex;
+            }
+        }
+
+        html[data-ui-theme="classic"] .header-actions .app-mode-btn {
+            color: #64748b;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .header-actions .app-mode-btn:hover {
+            color: #1d4ed8;
+            background: #eef4ff;
+        }
+
+        html[data-ui-theme="classic"] .header-actions .app-mode-btn.is-active {
+            color: #1d4ed8;
+            background: #ffffff;
+            box-shadow: 0 1px 4px rgba(15,23,42,.09);
+        }
+
+        @media (max-width: 720px) {
+            .header-actions .app-mode-btn {
+                width: 34px;
+                padding: 5px;
+            }
+        }
+
     </style>
 </head>
 <body>
