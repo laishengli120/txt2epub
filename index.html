@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
     <link rel="manifest" href="favicon/site.webmanifest">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jschardet/3.0.0/jschardet.min.js"></script>
@@ -1065,6 +1065,259 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+
+        /* --- Memphis Visual Refinement 2026 --- */
+        :root {
+            --memphis-bg: #fff9f2;
+            --memphis-primary: #ff5f57;
+            --memphis-secondary: #ffd166;
+            --memphis-accent1: #67d8ef;
+            --memphis-accent2: #5dd6b3;
+            --memphis-dark: #18181b;
+            --memphis-white: #fffefa;
+            --memphis-muted: #6f6a63;
+            --memphis-purple: #9b8cff;
+            --font-family: 'Bricolage Grotesque', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-cn: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --graphic-shadow: 6px 6px 0 var(--memphis-dark);
+            --graphic-shadow-sm: 3px 3px 0 var(--memphis-dark);
+            --graphic-shadow-hover: 9px 9px 0 var(--memphis-dark);
+            --surface-shadow: 0 12px 30px rgba(24, 24, 27, .08);
+            --transition: all .22s cubic-bezier(.2,.8,.2,1);
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-cn);
+            background:
+                radial-gradient(circle at 12% 15%, rgba(255,209,102,.30) 0 4px, transparent 5px) 0 0/34px 34px,
+                linear-gradient(120deg, rgba(103,216,239,.10), transparent 34%),
+                linear-gradient(300deg, rgba(255,95,87,.08), transparent 28%),
+                var(--memphis-bg);
+            letter-spacing: .01em;
+        }
+        body::before, body::after {
+            content: ''; position: fixed; pointer-events: none; z-index: -1; opacity: .7;
+        }
+        body::before {
+            width: 130px; height: 130px; right: 5vw; top: 13vh;
+            border: 18px solid var(--memphis-accent1); border-radius: 50%; transform: rotate(18deg);
+        }
+        body::after {
+            width: 90px; height: 26px; left: 7vw; bottom: 7vh;
+            background: repeating-linear-gradient(90deg,var(--memphis-purple) 0 12px,transparent 12px 22px);
+            transform: rotate(-9deg);
+        }
+        button, input, select, textarea { font: inherit; }
+
+        .header {
+            background: linear-gradient(90deg, rgba(255,255,255,.20), transparent 35%), var(--memphis-secondary);
+            box-shadow: 0 5px 0 var(--memphis-dark); overflow: hidden;
+        }
+        .header::before {
+            content: ''; width: 86px; height: 86px; position: absolute; right: 105px; top: -52px;
+            border: 14px solid var(--memphis-primary); border-radius: 50%; opacity: .9;
+        }
+        .header::after {
+            content: ''; position: absolute; width: 76px; height: 14px; right: 30px; bottom: 9px;
+            background: repeating-linear-gradient(90deg,var(--memphis-dark) 0 8px,transparent 8px 15px);
+            transform: rotate(-4deg); opacity: .85;
+        }
+        .header h1 {
+            font-family: 'Bricolage Grotesque', var(--font-cn);
+            font-size: clamp(1.15rem, 1.8vw, 1.55rem); font-weight: 800; letter-spacing: .065em; line-height: 1;
+            text-shadow: 2px 2px 0 rgba(255,255,255,.78);
+            transform-origin: left center; animation: memphisTitleIn .65s cubic-bezier(.16,1,.3,1) both;
+        }
+
+        .sidebar-icons { background: linear-gradient(rgba(255,255,255,.08), rgba(255,255,255,0)), var(--memphis-primary); }
+        .sidebar-icon { position: relative; box-shadow: var(--graphic-shadow-sm); transform-origin: center; }
+        .sidebar-icon::after {
+            content: ''; position: absolute; inset: 6px; border: 1.5px dashed transparent; border-radius: inherit; transition: var(--transition);
+        }
+        .sidebar-icon:hover::after, .sidebar-icon.active::after { border-color: var(--memphis-dark); }
+        .sidebar-icon:hover { transform: translate(-2px,-2px) rotate(6deg); box-shadow: 5px 5px 0 var(--memphis-dark); }
+        .sidebar-icon.active {
+            color: var(--memphis-dark); background: var(--memphis-accent2);
+            transform: translate(-1px,-1px) rotate(-3deg); box-shadow: 4px 4px 0 var(--memphis-dark);
+        }
+        .sidebar-content { background: linear-gradient(180deg, rgba(103,216,239,.07), transparent 120px), var(--memphis-white); }
+        .settings-section.active { animation: memphisPanelIn .32s cubic-bezier(.16,1,.3,1) both; }
+        .settings-header { margin-bottom: 28px; }
+        .settings-header h3 {
+            font-family: 'Bricolage Grotesque', var(--font-cn); color: var(--memphis-dark);
+            font-size: 1.08rem; font-weight: 800; letter-spacing: .025em;
+        }
+        .settings-header h3 i {
+            width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+            background: var(--memphis-secondary); border: 2px solid var(--memphis-dark); border-radius: 50%;
+            box-shadow: 2px 2px 0 var(--memphis-dark);
+        }
+
+        .main-content { position: relative; max-width: 1380px; width: 100%; margin-right: auto; }
+        .content-card {
+            border-radius: 10px; box-shadow: var(--graphic-shadow), var(--surface-shadow);
+            background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,254,250,.94));
+            transform-origin: 50% 15%; animation: memphisCardIn .55s cubic-bezier(.16,1,.3,1) both;
+        }
+        .content-card:nth-of-type(2) { animation-delay: .06s; }
+        .content-card:nth-of-type(3) { animation-delay: .12s; }
+        .content-card:nth-of-type(4) { animation-delay: .18s; }
+        .content-card::before {
+            width: 26px; height: 26px; top: -9px; right: -9px; background: var(--memphis-accent1);
+            box-shadow: 3px 3px 0 var(--memphis-dark);
+        }
+        .content-card::after {
+            content: ''; position: absolute; left: 18px; top: -8px; width: 58px; height: 16px;
+            background: var(--memphis-secondary); border: 2px solid var(--memphis-dark); transform: rotate(-2deg); opacity: .96;
+        }
+        h2, h3, h4 { font-family: 'Bricolage Grotesque', var(--font-cn); text-wrap: balance; }
+
+        .form-group label {
+            font-family: var(--font-cn); font-size: .78rem; font-weight: 700; letter-spacing: .08em; color: #403c37;
+        }
+        .form-control {
+            min-height: 44px; border-width: 2px; background: #fffdf8; border-radius: 8px;
+            box-shadow: inset 0 -2px 0 rgba(24,24,27,.04);
+            transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background-color .18s ease;
+        }
+        .form-control:hover { background: #fff; border-color: #4b4742; }
+        .form-control:focus {
+            border-color: var(--memphis-dark); box-shadow: 0 0 0 4px rgba(103,216,239,.48), 3px 3px 0 var(--memphis-dark);
+            transform: translate(-1px,-1px);
+        }
+        .radio-option { padding: 5px 8px 5px 5px; border-radius: 999px; transition: background-color .18s ease, transform .18s ease; }
+        .radio-option:hover { background: rgba(255,209,102,.30); transform: translateX(2px); }
+        .radio-option input[type="radio"] { width: 19px; height: 19px; border-width: 2px; background: var(--memphis-white); }
+        .radio-option input[type="radio"]:checked { background: var(--memphis-primary); box-shadow: 2px 2px 0 var(--memphis-dark); }
+
+        .btn {
+            position: relative; overflow: hidden; isolation: isolate; border-radius: 8px; border-width: 2px;
+            box-shadow: 5px 5px 0 var(--memphis-dark); letter-spacing: .045em;
+            transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s ease, background-color .18s ease, color .18s ease;
+        }
+        .btn::after {
+            content: ''; position: absolute; inset: 0; z-index: -1;
+            background: linear-gradient(110deg, transparent 20%, rgba(255,255,255,.45) 45%, transparent 68%);
+            transform: translateX(-140%); transition: transform .45s ease;
+        }
+        .btn:hover::after { transform: translateX(140%); }
+        .btn:hover { transform: translate(-3px,-3px) rotate(-.5deg); box-shadow: var(--graphic-shadow-hover); }
+        .btn:active { transform: translate(3px,3px) scale(.985); box-shadow: 2px 2px 0 var(--memphis-dark); }
+        .btn:focus-visible, .sidebar-icon:focus-visible, .icon-button:focus-visible, .cover-nav-btn:focus-visible {
+            outline: 4px solid rgba(155,140,255,.55); outline-offset: 3px;
+        }
+        .btn-outline:hover { transform: translate(-2px,-2px); box-shadow: 4px 4px 0 var(--memphis-primary); }
+
+        .drop-area {
+            border-width: 2px; border-radius: 12px; padding: 64px 30px;
+            background:
+                radial-gradient(circle, rgba(255,209,102,.90) 0 3px, transparent 4px) 0 0/24px 24px,
+                linear-gradient(135deg, rgba(255,255,255,.30), transparent 55%), var(--memphis-accent1);
+            box-shadow: inset 0 0 0 6px rgba(255,255,255,.32);
+        }
+        .drop-area::before {
+            width: 72px; height: 72px; left: auto; right: 24px; top: 20px; bottom: auto;
+            border: 10px solid var(--memphis-white); border-radius: 50%; background: transparent; opacity: .55; transform: rotate(8deg);
+        }
+        .drop-area::after {
+            content: ''; position: absolute; width: 74px; height: 14px; left: 23px; bottom: 24px;
+            background: repeating-linear-gradient(90deg,var(--memphis-primary) 0 9px,transparent 9px 16px);
+            transform: rotate(-5deg); opacity: .75;
+        }
+        .drop-area:hover {
+            border-color: var(--memphis-dark);
+            background:
+                radial-gradient(circle, rgba(255,255,255,.78) 0 3px, transparent 4px) 0 0/24px 24px,
+                linear-gradient(135deg, rgba(255,255,255,.22), transparent 55%), var(--memphis-accent2);
+            transform: translateY(-3px) rotate(-.15deg);
+            box-shadow: inset 0 0 0 6px rgba(255,255,255,.34), 6px 6px 0 var(--memphis-dark);
+        }
+        .drop-area h3 { font-size: clamp(1.2rem, 2vw, 1.55rem); font-weight: 800; letter-spacing: .015em; }
+        .drop-area p { font-family: var(--font-cn); color: #3f3b37; }
+        .file-format-badge {
+            display: inline-flex; align-items: center; min-height: 28px; border-radius: 999px; border-width: 2px;
+            box-shadow: 2px 2px 0 var(--memphis-dark);
+        }
+
+        .filbt { border-radius: 10px; box-shadow: var(--graphic-shadow); transition: transform .2s ease, box-shadow .2s ease; }
+        .filbt:hover { transform: translate(-2px,-2px); box-shadow: 8px 8px 0 var(--memphis-dark); }
+        .file-details h4 { font-family: var(--font-cn); font-weight: 700; }
+        .convert-btn { position: relative; overflow: hidden; font-family: 'Bricolage Grotesque', var(--font-cn); letter-spacing: .06em; }
+        .convert-btn:hover { transform: none; background: var(--memphis-secondary); }
+        .convert-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(115deg, transparent 18%, rgba(255,255,255,.42) 45%, transparent 70%);
+            transform: translateX(-130%); transition: transform .5s ease;
+        }
+        .convert-btn:hover::before { transform: translateX(130%); }
+        .convert-btn:active { transform: scale(.98); }
+
+        .config-summary {
+            border-width: 2px; border-left-width: 9px; border-radius: 10px;
+            background: linear-gradient(90deg, rgba(255,95,87,.06), transparent 40%), #fffdf8;
+        }
+        .config-summary h4 { font-family: 'Bricolage Grotesque', var(--font-cn); letter-spacing: .04em; }
+        .summary-cover {
+            border-width: 2px; border-radius: 8px; transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease;
+        }
+        .summary-cover:hover { transform: translate(-3px,-3px) rotate(1deg); box-shadow: 9px 9px 0 var(--memphis-dark); }
+
+        .progress-bar-container {
+            height: 18px; border-width: 2px; border-radius: 999px;
+            background: repeating-linear-gradient(-45deg,rgba(103,216,239,.62) 0 10px,rgba(255,255,255,.5) 10px 20px);
+        }
+        .progress-bar {
+            border-radius: 999px; background: linear-gradient(90deg, var(--memphis-primary), #ff856f);
+            position: relative; overflow: hidden;
+        }
+        .progress-bar::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.45), transparent 80%);
+            animation: memphisShimmer 1.3s linear infinite;
+        }
+        .result-icon { filter: drop-shadow(3px 3px 0 var(--memphis-dark)); animation: memphisResultPop .55s cubic-bezier(.34,1.56,.64,1) both; }
+        .result-card { border-width: 2px; box-shadow: 5px 5px 0 var(--memphis-dark); }
+
+        .modal-overlay { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        .modal-content.memphis-modal { border-radius: 12px; box-shadow: 9px 9px 0 var(--memphis-dark), 0 20px 60px rgba(24,24,27,.25); }
+        .modal-title-text { font-family: 'Bricolage Grotesque', var(--font-cn); font-weight: 800; letter-spacing: .025em; }
+        .modal-body { font-family: var(--font-cn); }
+        .loading-spinner { animation: spin 1.25s linear infinite, memphisPulse 1.25s ease-in-out infinite alternate; }
+
+        .btn-disabled, .convert-btn:disabled {
+            background: #c9c5bf !important; color: #77716b !important; border-color: #8d8881 !important;
+        }
+
+        @keyframes memphisTitleIn {
+            0% { opacity: 0; transform: translateX(-18px) rotate(-2deg); }
+            70% { opacity: 1; transform: translateX(3px) rotate(.4deg); }
+            100% { opacity: 1; transform: translateX(0) rotate(0); }
+        }
+        @keyframes memphisPanelIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes memphisCardIn { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes memphisShimmer { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+        @keyframes memphisResultPop {
+            0% { opacity: 0; transform: scale(.55) rotate(-10deg); }
+            75% { opacity: 1; transform: scale(1.08) rotate(3deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+        @keyframes memphisPulse {
+            from { filter: drop-shadow(0 0 0 rgba(255,95,87,0)); }
+            to { filter: drop-shadow(0 0 7px rgba(255,95,87,.35)); }
+        }
+
+        @media (max-width: 768px) {
+            body::before, body::after, .header::before, .header::after { opacity: .34; }
+            .drop-area { padding: 46px 20px; }
+            .content-card { border-radius: 9px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important; transition-duration: .01ms !important;
+            }
         }
 
     </style>
