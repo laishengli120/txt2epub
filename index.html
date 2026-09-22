@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-ui-theme="memphis">
+<html lang="zh-CN" data-ui-theme="memphis" data-app-mode="txt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +9,10 @@
                 var savedTheme = localStorage.getItem('txt2epub-ui-theme');
                 if (savedTheme === 'classic' || savedTheme === 'memphis') {
                     document.documentElement.setAttribute('data-ui-theme', savedTheme);
+                }
+                var savedMode = localStorage.getItem('txt2epub-app-mode');
+                if (savedMode === 'txt' || savedMode === 'epub') {
+                    document.documentElement.setAttribute('data-app-mode', savedMode);
                 }
             } catch (e) {}
         })();
@@ -2423,6 +2427,302 @@
             z-index: 1300;
         }
 
+
+        /* --- EPUB Editor Mode 2026-09-22 --- */
+        .app-mode-switch {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px;
+            gap: 2px;
+            border: 2px solid var(--memphis-dark);
+            border-radius: 999px;
+            background: rgba(255,255,255,.72);
+            box-shadow: 3px 3px 0 var(--memphis-dark);
+        }
+
+        .app-mode-btn {
+            min-height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 5px 10px;
+            color: var(--memphis-dark);
+            background: transparent;
+            border: 0;
+            border-radius: 999px;
+            font-family: var(--font-cn);
+            font-size: .76rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color .16s ease, transform .16s ease, color .16s ease;
+        }
+
+        .app-mode-btn:hover { background: rgba(103,216,239,.25); }
+        .app-mode-btn.is-active {
+            background: var(--memphis-accent2);
+            box-shadow: inset 0 0 0 1px rgba(24,24,27,.1);
+        }
+
+        #epubEditorCard { display: none; }
+        html[data-app-mode="epub"] #epubEditorCard { display: block; }
+        html[data-app-mode="epub"] #uploadCard,
+        html[data-app-mode="epub"] #progressCard,
+        html[data-app-mode="epub"] #resultCard,
+        html[data-app-mode="epub"] #debugAreaDOM { display: none !important; }
+        html[data-app-mode="epub"] #sidebar { display: none !important; }
+        html[data-app-mode="epub"] #mainContent {
+            margin-left: 0 !important;
+            width: 100%;
+            max-width: 1240px;
+            margin-right: auto !important;
+            margin-inline: auto !important;
+        }
+
+        .epub-editor-card { padding: 28px; }
+        .epub-editor-hero {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 22px;
+            margin-bottom: 24px;
+        }
+        .epub-editor-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 8px;
+            padding: 4px 9px;
+            background: var(--memphis-secondary);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 999px;
+            font-size: .7rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+        }
+        .epub-editor-hero h2 {
+            margin: 0 0 6px;
+            font-size: clamp(1.35rem, 2vw, 1.85rem);
+            font-weight: 800;
+        }
+        .epub-editor-hero p {
+            margin: 0;
+            color: var(--memphis-muted);
+            font-size: .92rem;
+        }
+
+        .epub-edit-drop-area {
+            min-height: 330px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 42px 28px;
+            background:
+                radial-gradient(circle, rgba(255,209,102,.82) 0 3px, transparent 4px) 0 0/26px 26px,
+                var(--memphis-accent1);
+            border: 2px dashed var(--memphis-dark);
+            border-radius: 13px;
+            box-shadow: inset 0 0 0 6px rgba(255,255,255,.28);
+            transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease;
+        }
+        .epub-edit-drop-area.is-dragging {
+            transform: translateY(-2px);
+            background-color: var(--memphis-accent2);
+            box-shadow: inset 0 0 0 6px rgba(255,255,255,.32), 5px 5px 0 var(--memphis-dark);
+        }
+        .epub-drop-icon {
+            width: 64px;
+            height: 64px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 15px;
+            background: var(--memphis-white);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 50%;
+            box-shadow: 4px 4px 0 var(--memphis-dark);
+            font-size: 1.45rem;
+        }
+        .epub-edit-drop-area h3 { margin-bottom: 8px; font-size: 1.3rem; }
+        .epub-edit-drop-area p { margin-bottom: 22px; color: #403c37; }
+
+        .epub-file-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 22px;
+            padding: 14px 16px;
+            background: var(--memphis-secondary);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 10px;
+            box-shadow: 4px 4px 0 var(--memphis-dark);
+        }
+        .epub-file-main { display: flex; align-items: center; gap: 11px; min-width: 0; }
+        .epub-file-main > div:last-child { min-width: 0; display: flex; flex-direction: column; }
+        .epub-file-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .epub-file-main span { color: var(--memphis-muted); font-size: .76rem; }
+        .epub-file-icon {
+            width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center;
+            background: var(--memphis-white); border: 2px solid var(--memphis-dark); border-radius: 8px;
+        }
+        .epub-file-stats { display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .epub-file-stats span {
+            min-width: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 5px 8px; background: rgba(255,255,255,.64); border: 1.5px solid var(--memphis-dark);
+            border-radius: 7px;
+        }
+        .epub-file-stats b { font-size: .62rem; letter-spacing: .05em; color: var(--memphis-muted); }
+        .epub-file-stats em { font-size: .82rem; font-style: normal; font-weight: 800; }
+
+        .epub-editor-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.65fr) minmax(250px, .75fr);
+            gap: 22px;
+            align-items: start;
+        }
+        .epub-meta-panel, .epub-cover-panel {
+            padding: 20px;
+            background: rgba(255,255,255,.72);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 11px;
+            box-shadow: 4px 4px 0 var(--memphis-dark);
+        }
+        .epub-panel-title { display: flex; align-items: center; gap: 11px; margin-bottom: 20px; }
+        .epub-panel-title h3 { margin: 0 0 2px; font-size: 1.02rem; }
+        .epub-panel-title p { margin: 0; color: var(--memphis-muted); font-size: .76rem; line-height: 1.45; }
+        .epub-panel-icon {
+            width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center;
+            background: var(--memphis-accent2); border: 2px solid var(--memphis-dark); border-radius: 50%;
+        }
+        .epub-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0 18px; }
+        .epub-description-input {
+            width: 100%;
+            resize: vertical;
+            min-height: 112px;
+            padding: 11px 12px;
+            background: var(--memphis-white);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 8px;
+            box-shadow: 3px 3px 0 var(--memphis-dark);
+            line-height: 1.55;
+        }
+        .epub-description-input:focus {
+            outline: none;
+            border-color: var(--memphis-primary);
+            box-shadow: 3px 3px 0 var(--memphis-dark), 0 0 0 3px rgba(103,216,239,.25);
+        }
+        .epub-readonly-meta {
+            display: flex; align-items: center; gap: 10px; min-width: 0;
+            padding: 9px 10px; background: rgba(255,209,102,.20); border-left: 4px solid var(--memphis-secondary);
+            font-size: .75rem;
+        }
+        .epub-readonly-meta span { flex: 0 0 auto; color: var(--memphis-muted); font-weight: 700; }
+        .epub-readonly-meta code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .epub-cover-stage {
+            width: min(190px, 78%);
+            aspect-ratio: 2 / 3;
+            position: relative;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 18px;
+            overflow: hidden;
+            background: var(--memphis-accent1);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 9px;
+            box-shadow: 5px 5px 0 var(--memphis-dark);
+        }
+        .epub-cover-stage img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .epub-cover-empty {
+            display: flex; flex-direction: column; align-items: center; gap: 9px;
+            padding: 14px; color: #403c37; text-align: center; font-size: .76rem; font-weight: 700;
+        }
+        .epub-cover-empty i { font-size: 1.8rem; }
+        .epub-cover-change-badge {
+            position: absolute; right: 7px; top: 7px; padding: 3px 7px;
+            color: var(--memphis-dark); background: var(--memphis-secondary); border: 1.5px solid var(--memphis-dark);
+            border-radius: 999px; font-size: .62rem; font-weight: 800;
+        }
+        .epub-cover-actions { display: flex; flex-direction: column; gap: 9px; }
+        .epub-cover-note { margin: 11px 0 0; color: var(--memphis-muted); font-size: .7rem; line-height: 1.5; text-align: center; }
+
+        .epub-edit-status {
+            display: flex; align-items: center; gap: 9px; margin-top: 22px; padding: 11px 13px;
+            background: rgba(103,216,239,.16); border: 1.5px dashed var(--memphis-dark); border-radius: 8px;
+            font-size: .78rem;
+        }
+        .epub-edit-status.is-error { background: rgba(255,95,87,.14); }
+        .epub-edit-status.is-success { background: rgba(93,214,179,.20); }
+        .epub-editor-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+        .epub-export-btn { min-width: 210px; }
+
+        html[data-ui-theme="classic"] .app-mode-switch {
+            padding: 3px; border: 1px solid #d8dee8; border-radius: 10px; background: #f5f7fa; box-shadow: none;
+        }
+        html[data-ui-theme="classic"] .app-mode-btn {
+            min-height: 30px; color: #64748b; border-radius: 7px; font-weight: 600;
+        }
+        html[data-ui-theme="classic"] .app-mode-btn:hover { background: #eef4ff; color: #1d4ed8; }
+        html[data-ui-theme="classic"] .app-mode-btn.is-active { color: #1d4ed8; background: #ffffff; box-shadow: 0 1px 4px rgba(15,23,42,.09); }
+
+        html[data-ui-theme="classic"] .epub-editor-kicker {
+            color: #1d4ed8; background: #eef4ff; border: 1px solid #cfe0ff; box-shadow: none;
+        }
+        html[data-ui-theme="classic"] .epub-edit-drop-area {
+            background: #f8fbff; border: 1.5px dashed #9db7df; box-shadow: none;
+        }
+        html[data-ui-theme="classic"] .epub-edit-drop-area.is-dragging {
+            background: #eef6ff; border-color: #3b82f6; transform: none; box-shadow: inset 0 0 0 1px rgba(59,130,246,.12);
+        }
+        html[data-ui-theme="classic"] .epub-drop-icon,
+        html[data-ui-theme="classic"] .epub-file-icon,
+        html[data-ui-theme="classic"] .epub-panel-icon {
+            border: 1px solid #dbe2ea; box-shadow: none;
+        }
+        html[data-ui-theme="classic"] .epub-file-summary {
+            background: #f8fafc; border: 1px solid #dfe5ec; box-shadow: none;
+        }
+        html[data-ui-theme="classic"] .epub-file-stats span { background: #fff; border: 1px solid #dfe5ec; }
+        html[data-ui-theme="classic"] .epub-meta-panel,
+        html[data-ui-theme="classic"] .epub-cover-panel {
+            background: #fff; border: 1px solid #e1e7ee; box-shadow: 0 4px 16px rgba(15,23,42,.045);
+        }
+        html[data-ui-theme="classic"] .epub-panel-icon { color: #1d4ed8; background: #eef4ff; }
+        html[data-ui-theme="classic"] .epub-description-input {
+            border: 1px solid #cfd7e3; box-shadow: none; border-radius: 9px; background: #fff;
+        }
+        html[data-ui-theme="classic"] .epub-description-input:focus {
+            border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+        }
+        html[data-ui-theme="classic"] .epub-readonly-meta { background: #f8fafc; border-left-color: #3b82f6; }
+        html[data-ui-theme="classic"] .epub-cover-stage {
+            background: #f1f5f9; border: 1px solid #dbe2ea; box-shadow: 0 4px 14px rgba(15,23,42,.08);
+        }
+        html[data-ui-theme="classic"] .epub-cover-change-badge {
+            color: #1d4ed8; background: #eef4ff; border: 1px solid #cfe0ff;
+        }
+        html[data-ui-theme="classic"] .epub-edit-status { background: #f8fafc; border: 1px solid #dfe5ec; }
+        html[data-ui-theme="classic"] .epub-edit-status.is-error { background: #fff2f0; border-color: #ffd0cb; }
+        html[data-ui-theme="classic"] .epub-edit-status.is-success { background: #edfdf5; border-color: #bdebd5; }
+
+        @media (max-width: 900px) {
+            .epub-editor-grid { grid-template-columns: 1fr; }
+            .epub-cover-stage { width: 160px; }
+        }
+        @media (max-width: 720px) {
+            .app-mode-btn span { display: none; }
+            .app-mode-btn { width: 34px; padding: 5px; }
+            .epub-editor-card { padding: 18px; }
+            .epub-editor-hero { flex-direction: column; }
+            .epub-meta-grid { grid-template-columns: 1fr; }
+            .epub-file-summary { align-items: flex-start; flex-direction: column; }
+            .epub-file-stats { width: 100%; justify-content: flex-start; }
+            .epub-editor-actions .btn { width: 100%; }
+        }
+
     </style>
 </head>
 <body>
@@ -2430,6 +2730,16 @@
         <div class="header">
             <h1>TXT to EPUB Factory</h1>
             <div class="header-actions">
+                <div class="app-mode-switch" id="appModeSwitch" role="group" aria-label="功能模式">
+                    <button type="button" class="app-mode-btn is-active" data-mode="txt" aria-pressed="true" title="TXT 转 EPUB">
+                        <i class="fas fa-file-lines" aria-hidden="true"></i>
+                        <span>TXT 转 EPUB</span>
+                    </button>
+                    <button type="button" class="app-mode-btn" data-mode="epub" aria-pressed="false" title="编辑 EPUB">
+                        <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+                        <span>编辑 EPUB</span>
+                    </button>
+                </div>
                 <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="切换到普通风格" title="切换到普通风格">
                     <i class="fas fa-layer-group" aria-hidden="true"></i>
                     <span class="theme-toggle-text">普通风格</span>
@@ -2612,6 +2922,135 @@
         </div>
 
         <div class="main-content" id="mainContent">
+            <div class="content-card epub-editor-card" id="epubEditorCard">
+                <div class="epub-editor-hero">
+                    <div>
+                        <div class="epub-editor-kicker"><i class="fas fa-book-open"></i> EPUB EDITOR</div>
+                        <h2>编辑已有 EPUB</h2>
+                        <p>修改书籍元数据与封面，不重排正文，不改变原有章节结构。</p>
+                    </div>
+                    <button type="button" class="btn btn-outline btn-sm epub-reset-btn" id="epubResetBtn" style="display:none;">
+                        <i class="fas fa-rotate-left"></i> 重新选择
+                    </button>
+                </div>
+
+                <div class="epub-edit-drop-area" id="epubEditDropArea">
+                    <div class="epub-drop-icon"><i class="fas fa-book"></i></div>
+                    <h3>拖放或选择 <span class="file-format-badge">EPUB</span> 文件</h3>
+                    <p>文件仅在浏览器本地处理，不会上传。</p>
+                    <button type="button" class="btn btn-secondary" id="selectEpubEditBtn">
+                        <i class="fas fa-folder-open"></i> 选择 EPUB
+                    </button>
+                    <input type="file" id="epubEditInput" accept=".epub,application/epub+zip" hidden>
+                </div>
+
+                <div class="epub-edit-workspace" id="epubEditWorkspace" style="display:none;">
+                    <div class="epub-file-summary">
+                        <div class="epub-file-main">
+                            <div class="epub-file-icon"><i class="fas fa-book"></i></div>
+                            <div>
+                                <strong id="epubEditFileName">book.epub</strong>
+                                <span id="epubEditFileSize">—</span>
+                            </div>
+                        </div>
+                        <div class="epub-file-stats">
+                            <span><b>版本</b><em id="epubEditVersion">—</em></span>
+                            <span><b>章节</b><em id="epubEditChapterCount">—</em></span>
+                            <span><b>资源</b><em id="epubEditResourceCount">—</em></span>
+                        </div>
+                    </div>
+
+                    <div class="epub-editor-grid">
+                        <section class="epub-meta-panel">
+                            <div class="epub-panel-title">
+                                <span class="epub-panel-icon"><i class="fas fa-pen"></i></span>
+                                <div>
+                                    <h3>书籍信息</h3>
+                                    <p>修改阅读器书架中显示的主要元数据。</p>
+                                </div>
+                            </div>
+
+                            <div class="epub-meta-grid">
+                                <div class="form-group">
+                                    <label for="epubMetaTitle">书名</label>
+                                    <input type="text" id="epubMetaTitle" class="form-control" placeholder="书名">
+                                </div>
+                                <div class="form-group">
+                                    <label for="epubMetaAuthor">作者</label>
+                                    <input type="text" id="epubMetaAuthor" class="form-control" placeholder="作者">
+                                </div>
+                                <div class="form-group">
+                                    <label for="epubMetaPublisher">出版社 / 来源</label>
+                                    <input type="text" id="epubMetaPublisher" class="form-control" placeholder="可选">
+                                </div>
+                                <div class="form-group">
+                                    <label for="epubMetaLanguage">语言</label>
+                                    <select id="epubMetaLanguage" class="form-control">
+                                        <option value="zh-CN">简体中文（zh-CN）</option>
+                                        <option value="zh-TW">繁体中文（zh-TW）</option>
+                                        <option value="zh">中文（zh）</option>
+                                        <option value="en">English（en）</option>
+                                        <option value="ja">日本語（ja）</option>
+                                        <option value="ko">한국어（ko）</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="epubMetaDescription">书籍简介</label>
+                                <textarea id="epubMetaDescription" class="form-control epub-description-input" rows="5" placeholder="可选，可修改 EPUB 中的 description 元数据"></textarea>
+                            </div>
+
+                            <div class="epub-readonly-meta">
+                                <span>书籍标识</span>
+                                <code id="epubMetaIdentifier">—</code>
+                            </div>
+                        </section>
+
+                        <section class="epub-cover-panel">
+                            <div class="epub-panel-title">
+                                <span class="epub-panel-icon"><i class="fas fa-image"></i></span>
+                                <div>
+                                    <h3>书籍封面</h3>
+                                    <p>可为无封面的 EPUB 添加封面，也可替换原封面。</p>
+                                </div>
+                            </div>
+
+                            <div class="epub-cover-stage" id="epubCoverStage">
+                                <img id="epubCoverPreview" alt="EPUB 封面预览">
+                                <div class="epub-cover-empty" id="epubCoverEmpty">
+                                    <i class="fas fa-image"></i>
+                                    <span>当前未检测到封面</span>
+                                </div>
+                                <span class="epub-cover-change-badge" id="epubCoverChangeBadge" style="display:none;">待替换</span>
+                            </div>
+
+                            <div class="epub-cover-actions">
+                                <button type="button" class="btn btn-secondary btn-sm" id="epubChooseCoverBtn">
+                                    <i class="fas fa-image"></i> 添加 / 替换封面
+                                </button>
+                                <button type="button" class="btn btn-outline btn-sm" id="epubRestoreCoverBtn" disabled>
+                                    恢复原封面
+                                </button>
+                                <input type="file" id="epubCoverInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+                            </div>
+                            <p class="epub-cover-note" id="epubCoverNote">建议使用 JPG 或 PNG，竖版封面兼容性最好。</p>
+                        </section>
+                    </div>
+
+                    <div class="epub-edit-status" id="epubEditStatus" aria-live="polite">
+                        <i class="fas fa-circle-info"></i>
+                        <span>修改完成后导出新的 EPUB，原文件不会被覆盖。</span>
+                    </div>
+
+                    <div class="epub-editor-actions">
+                        <button type="button" class="btn btn-success epub-export-btn" id="epubExportBtn">
+                            <i class="fas fa-download"></i> 保存并导出 EPUB
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="content-card upload-area" id="uploadCard">
                 <div class="drop-area" id="dropArea">
                     <h3>拖放或选择 <span class="file-format-badge">TXT</span> 文件</h3>
@@ -5006,6 +5445,580 @@
                 document.addEventListener('DOMContentLoaded', init, { once: true });
             } else {
                 init();
+            }
+        })();
+    </script>
+
+
+    <script id="epubEditorRuntime">
+        (function () {
+            var MODE_KEY = 'txt2epub-app-mode';
+            var root = document.documentElement;
+            var state = {
+                file: null,
+                zip: null,
+                opfPath: '',
+                opfDir: '',
+                opfDoc: null,
+                opfOriginalText: '',
+                cover: null,
+                originalCoverUrl: '',
+                pendingCoverFile: null,
+                pendingCoverUrl: ''
+            };
+
+            function el(id) { return document.getElementById(id); }
+            function localElements(parent, localName) {
+                if (!parent) return [];
+                var list = parent.getElementsByTagNameNS ? parent.getElementsByTagNameNS('*', localName) : [];
+                if (list && list.length) return Array.prototype.slice.call(list);
+                return Array.prototype.slice.call(parent.getElementsByTagName(localName));
+            }
+            function firstLocal(parent, localName) {
+                var items = localElements(parent, localName);
+                return items.length ? items[0] : null;
+            }
+            function textOf(parent, localName) {
+                var node = firstLocal(parent, localName);
+                return node ? (node.textContent || '').trim() : '';
+            }
+            function parseXml(text, label) {
+                var doc = new DOMParser().parseFromString(text, 'application/xml');
+                var error = doc.getElementsByTagName('parsererror')[0];
+                if (error) throw new Error((label || 'XML') + ' 解析失败');
+                return doc;
+            }
+            function normalizePath(path) {
+                var parts = String(path || '').replace(/\\/g, '/').split('/');
+                var out = [];
+                parts.forEach(function (part) {
+                    if (!part || part === '.') return;
+                    if (part === '..') out.pop();
+                    else out.push(part);
+                });
+                return out.join('/');
+            }
+            function dirname(path) {
+                var p = String(path || '');
+                var idx = p.lastIndexOf('/');
+                return idx >= 0 ? p.slice(0, idx + 1) : '';
+            }
+            function resolvePath(baseDir, href) {
+                var clean = String(href || '').split('#')[0].split('?')[0];
+                var joined = normalizePath(baseDir + clean);
+                return joined;
+            }
+            function humanSize(bytes) {
+                if (!Number.isFinite(bytes)) return '—';
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            }
+            function safeFileName(name) {
+                var value = String(name || 'edited-book').trim() || 'edited-book';
+                return value.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim();
+            }
+            function setStatus(message, type) {
+                var box = el('epubEditStatus');
+                if (!box) return;
+                box.classList.remove('is-error', 'is-success');
+                if (type === 'error') box.classList.add('is-error');
+                if (type === 'success') box.classList.add('is-success');
+                var icon = box.querySelector('i');
+                var text = box.querySelector('span');
+                if (icon) icon.className = type === 'error' ? 'fas fa-circle-exclamation' : (type === 'success' ? 'fas fa-circle-check' : 'fas fa-circle-info');
+                if (text) text.textContent = message;
+            }
+            function revokeUrl(url) {
+                if (url) {
+                    try { URL.revokeObjectURL(url); } catch (e) {}
+                }
+            }
+            function clearPreviewUrls() {
+                revokeUrl(state.originalCoverUrl);
+                revokeUrl(state.pendingCoverUrl);
+                state.originalCoverUrl = '';
+                state.pendingCoverUrl = '';
+            }
+            function showCover(url, changed) {
+                var img = el('epubCoverPreview');
+                var empty = el('epubCoverEmpty');
+                var badge = el('epubCoverChangeBadge');
+                if (img && url) {
+                    img.src = url;
+                    img.style.display = 'block';
+                } else if (img) {
+                    img.removeAttribute('src');
+                    img.style.display = 'none';
+                }
+                if (empty) empty.style.display = url ? 'none' : 'flex';
+                if (badge) badge.style.display = changed ? 'inline-flex' : 'none';
+            }
+            function setMode(mode, persist) {
+                var normalized = mode === 'epub' ? 'epub' : 'txt';
+                root.setAttribute('data-app-mode', normalized);
+                document.querySelectorAll('.app-mode-btn').forEach(function (button) {
+                    var active = button.dataset.mode === normalized;
+                    button.classList.toggle('is-active', active);
+                    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+                });
+                if (persist) {
+                    try { localStorage.setItem(MODE_KEY, normalized); } catch (e) {}
+                }
+                window.setTimeout(function () {
+                    try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+                }, 0);
+            }
+            function initModeSwitch() {
+                document.querySelectorAll('.app-mode-btn').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        setMode(button.dataset.mode, true);
+                    });
+                });
+                setMode(root.getAttribute('data-app-mode') === 'epub' ? 'epub' : 'txt', false);
+            }
+            function manifestItems(doc) {
+                var manifest = firstLocal(doc, 'manifest');
+                return manifest ? localElements(manifest, 'item') : [];
+            }
+            function findManifestItemById(doc, id) {
+                return manifestItems(doc).find(function (item) { return item.getAttribute('id') === id; }) || null;
+            }
+            function findCoverInfo(doc, opfDir, zip) {
+                var items = manifestItems(doc);
+                var coverItem = items.find(function (item) {
+                    return (item.getAttribute('properties') || '').split(/\s+/).indexOf('cover-image') >= 0;
+                }) || null;
+
+                var metadata = firstLocal(doc, 'metadata');
+                if (!coverItem && metadata) {
+                    var metas = localElements(metadata, 'meta');
+                    var coverMeta = metas.find(function (meta) {
+                        return (meta.getAttribute('name') || '').toLowerCase() === 'cover' && meta.getAttribute('content');
+                    });
+                    if (coverMeta) coverItem = findManifestItemById(doc, coverMeta.getAttribute('content'));
+                }
+
+                if (!coverItem) {
+                    coverItem = items.find(function (item) {
+                        var id = (item.getAttribute('id') || '').toLowerCase();
+                        var href = (item.getAttribute('href') || '').toLowerCase();
+                        var media = (item.getAttribute('media-type') || '').toLowerCase();
+                        return media.indexOf('image/') === 0 && (id.indexOf('cover') >= 0 || /(^|[\/_.-])cover([\/_.-]|$)/.test(href));
+                    }) || null;
+                }
+                if (!coverItem) return null;
+
+                var href = coverItem.getAttribute('href') || '';
+                var path = resolvePath(opfDir, href);
+                var actualPath = path;
+                if (!zip.file(actualPath)) {
+                    try {
+                        var decoded = decodeURIComponent(path);
+                        if (zip.file(decoded)) actualPath = decoded;
+                    } catch (e) {}
+                }
+                return {
+                    item: coverItem,
+                    id: coverItem.getAttribute('id') || '',
+                    href: href,
+                    path: actualPath,
+                    mediaType: coverItem.getAttribute('media-type') || ''
+                };
+            }
+            function ensureLanguageOption(value) {
+                var select = el('epubMetaLanguage');
+                if (!select) return;
+                var lang = value || 'zh-CN';
+                var exists = Array.prototype.some.call(select.options, function (option) { return option.value === lang; });
+                if (!exists) {
+                    var option = document.createElement('option');
+                    option.value = lang;
+                    option.textContent = lang + '（原书语言）';
+                    select.appendChild(option);
+                }
+                select.value = lang;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            async function loadEpubFile(file) {
+                if (!file) return;
+                if (!/\.epub$/i.test(file.name)) {
+                    setStatus('请选择有效的 .epub 文件。', 'error');
+                    return;
+                }
+                if (typeof JSZip === 'undefined') {
+                    setStatus('JSZip 未加载，无法读取 EPUB。', 'error');
+                    return;
+                }
+
+                setStatus('正在读取 EPUB 结构…');
+                var exportBtn = el('epubExportBtn');
+                if (exportBtn) exportBtn.disabled = true;
+
+                try {
+                    clearPreviewUrls();
+                    state.pendingCoverFile = null;
+                    state.file = file;
+                    state.zip = await JSZip.loadAsync(file);
+
+                    var containerEntry = state.zip.file('META-INF/container.xml');
+                    if (!containerEntry) throw new Error('缺少 META-INF/container.xml，不是标准 EPUB');
+                    var containerText = await containerEntry.async('text');
+                    var containerDoc = parseXml(containerText, 'container.xml');
+                    var rootfiles = localElements(containerDoc, 'rootfile');
+                    if (!rootfiles.length) throw new Error('无法找到 EPUB 主内容文件');
+                    state.opfPath = rootfiles[0].getAttribute('full-path') || '';
+                    if (!state.opfPath) throw new Error('EPUB 主内容路径为空');
+
+                    var opfEntry = state.zip.file(state.opfPath);
+                    if (!opfEntry) throw new Error('找不到 OPF 文件：' + state.opfPath);
+                    state.opfOriginalText = await opfEntry.async('text');
+                    state.opfDoc = parseXml(state.opfOriginalText, 'OPF');
+                    state.opfDir = dirname(state.opfPath);
+
+                    var pkg = state.opfDoc.documentElement;
+                    var metadata = firstLocal(state.opfDoc, 'metadata');
+                    var spine = firstLocal(state.opfDoc, 'spine');
+                    if (!metadata) throw new Error('OPF 中缺少 metadata');
+
+                    el('epubMetaTitle').value = textOf(metadata, 'title');
+                    el('epubMetaAuthor').value = textOf(metadata, 'creator');
+                    el('epubMetaPublisher').value = textOf(metadata, 'publisher');
+                    el('epubMetaDescription').value = textOf(metadata, 'description');
+                    el('epubMetaIdentifier').textContent = textOf(metadata, 'identifier') || '未提供';
+                    ensureLanguageOption(textOf(metadata, 'language') || 'zh-CN');
+
+                    el('epubEditFileName').textContent = file.name;
+                    el('epubEditFileSize').textContent = humanSize(file.size);
+                    el('epubEditVersion').textContent = (pkg && pkg.getAttribute('version')) || '未知';
+                    el('epubEditChapterCount').textContent = spine ? localElements(spine, 'itemref').length : 0;
+                    el('epubEditResourceCount').textContent = manifestItems(state.opfDoc).length;
+
+                    state.cover = findCoverInfo(state.opfDoc, state.opfDir, state.zip);
+                    if (state.cover && state.zip.file(state.cover.path)) {
+                        var coverBlob = await state.zip.file(state.cover.path).async('blob');
+                        state.originalCoverUrl = URL.createObjectURL(coverBlob);
+                        showCover(state.originalCoverUrl, false);
+                        el('epubCoverNote').textContent = '已检测到原封面。选择新图片即可替换，恢复按钮可撤销本次封面修改。';
+                    } else {
+                        state.cover = null;
+                        showCover('', false);
+                        el('epubCoverNote').textContent = '当前 EPUB 未检测到封面，可直接添加 JPG 或 PNG 封面。';
+                    }
+
+                    var restoreBtn = el('epubRestoreCoverBtn');
+                    if (restoreBtn) restoreBtn.disabled = true;
+                    el('epubEditDropArea').style.display = 'none';
+                    el('epubEditWorkspace').style.display = 'block';
+                    el('epubResetBtn').style.display = 'inline-flex';
+                    if (exportBtn) exportBtn.disabled = false;
+                    setStatus('EPUB 已读取。修改信息后点击“保存并导出 EPUB”。');
+                } catch (error) {
+                    console.error(error);
+                    setStatus(error && error.message ? error.message : 'EPUB 读取失败。', 'error');
+                    if (exportBtn) exportBtn.disabled = true;
+                }
+            }
+            function resetEditor() {
+                clearPreviewUrls();
+                state.file = null;
+                state.zip = null;
+                state.opfPath = '';
+                state.opfDir = '';
+                state.opfDoc = null;
+                state.opfOriginalText = '';
+                state.cover = null;
+                state.pendingCoverFile = null;
+                var epubInput = el('epubEditInput');
+                var coverInput = el('epubCoverInput');
+                if (epubInput) epubInput.value = '';
+                if (coverInput) coverInput.value = '';
+                el('epubEditDropArea').style.display = 'flex';
+                el('epubEditWorkspace').style.display = 'none';
+                el('epubResetBtn').style.display = 'none';
+                showCover('', false);
+                setStatus('修改完成后导出新的 EPUB，原文件不会被覆盖。');
+            }
+            function handleCoverFile(file) {
+                if (!file || !/^image\//i.test(file.type)) {
+                    setStatus('请选择 JPG、PNG、WebP 或 GIF 图片。', 'error');
+                    return;
+                }
+                revokeUrl(state.pendingCoverUrl);
+                state.pendingCoverFile = file;
+                state.pendingCoverUrl = URL.createObjectURL(file);
+                showCover(state.pendingCoverUrl, true);
+                var restoreBtn = el('epubRestoreCoverBtn');
+                if (restoreBtn) restoreBtn.disabled = false;
+                el('epubCoverNote').textContent = '已选择新封面：' + file.name + '。导出时会写入 EPUB。';
+                setStatus('新封面已准备，尚未写入文件。');
+            }
+            function restoreOriginalCover() {
+                state.pendingCoverFile = null;
+                revokeUrl(state.pendingCoverUrl);
+                state.pendingCoverUrl = '';
+                showCover(state.originalCoverUrl || '', false);
+                var restoreBtn = el('epubRestoreCoverBtn');
+                if (restoreBtn) restoreBtn.disabled = true;
+                el('epubCoverNote').textContent = state.cover ? '已恢复原封面，本次导出不会修改封面。' : '当前 EPUB 未检测到原封面。';
+                setStatus('已撤销本次封面修改。');
+            }
+            function dcNamespace() { return 'http://purl.org/dc/elements/1.1/'; }
+            function opfNamespace(doc) {
+                return (doc && doc.documentElement && doc.documentElement.namespaceURI) || 'http://www.idpf.org/2007/opf';
+            }
+            function setMetaValue(doc, localName, value, required) {
+                var metadata = firstLocal(doc, 'metadata');
+                var nodes = localElements(metadata, localName);
+                var node = nodes.length ? nodes[0] : null;
+                var clean = String(value || '').trim();
+
+                if (!clean && !required) {
+                    if (node && node.parentNode) node.parentNode.removeChild(node);
+                    return;
+                }
+                if (!node) {
+                    node = doc.createElementNS(dcNamespace(), 'dc:' + localName);
+                    metadata.appendChild(node);
+                }
+                node.textContent = clean;
+            }
+            function updateModifiedMeta(doc) {
+                var pkg = doc.documentElement;
+                var version = parseFloat((pkg && pkg.getAttribute('version')) || '0');
+                if (!(version >= 3)) return;
+                var metadata = firstLocal(doc, 'metadata');
+                var metas = localElements(metadata, 'meta');
+                var modified = metas.find(function (meta) {
+                    return (meta.getAttribute('property') || '').trim() === 'dcterms:modified';
+                });
+                if (!modified) {
+                    modified = doc.createElementNS(opfNamespace(doc), 'meta');
+                    modified.setAttribute('property', 'dcterms:modified');
+                    metadata.appendChild(modified);
+                }
+                modified.textContent = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+            }
+            function mimeFromName(name, fallback) {
+                var lower = String(name || '').toLowerCase();
+                if (/\.png$/.test(lower)) return 'image/png';
+                if (/\.jpe?g$/.test(lower)) return 'image/jpeg';
+                if (/\.webp$/.test(lower)) return 'image/webp';
+                if (/\.gif$/.test(lower)) return 'image/gif';
+                return fallback || 'image/jpeg';
+            }
+            function extFromMime(mime) {
+                if (mime === 'image/png') return 'png';
+                if (mime === 'image/webp') return 'webp';
+                if (mime === 'image/gif') return 'gif';
+                return 'jpg';
+            }
+            function uniqueManifestId(doc, base) {
+                var candidate = base;
+                var n = 2;
+                while (findManifestItemById(doc, candidate)) {
+                    candidate = base + '-' + n++;
+                }
+                return candidate;
+            }
+            function uniqueZipPath(zip, path) {
+                if (!zip.file(path)) return path;
+                var dot = path.lastIndexOf('.');
+                var base = dot >= 0 ? path.slice(0, dot) : path;
+                var ext = dot >= 0 ? path.slice(dot) : '';
+                var n = 2;
+                var candidate = base + '-' + n + ext;
+                while (zip.file(candidate)) {
+                    n++;
+                    candidate = base + '-' + n + ext;
+                }
+                return candidate;
+            }
+            function ensureCoverMetadata(doc, item) {
+                var metadata = firstLocal(doc, 'metadata');
+                var metas = localElements(metadata, 'meta');
+                var coverMeta = metas.find(function (meta) {
+                    return (meta.getAttribute('name') || '').toLowerCase() === 'cover';
+                });
+                if (!coverMeta) {
+                    coverMeta = doc.createElementNS(opfNamespace(doc), 'meta');
+                    coverMeta.setAttribute('name', 'cover');
+                    metadata.appendChild(coverMeta);
+                }
+                coverMeta.setAttribute('content', item.getAttribute('id'));
+
+                var props = (item.getAttribute('properties') || '').split(/\s+/).filter(Boolean);
+                if (props.indexOf('cover-image') < 0) props.push('cover-image');
+                item.setAttribute('properties', props.join(' '));
+            }
+            async function writePendingCover() {
+                if (!state.pendingCoverFile) return;
+                var file = state.pendingCoverFile;
+                var mime = file.type || mimeFromName(file.name, 'image/jpeg');
+
+                if (state.cover && state.cover.item && state.cover.path) {
+                    var targetPath = state.cover.path;
+                    await state.zip.file(targetPath, await file.arrayBuffer());
+                    state.cover.item.setAttribute('media-type', mime);
+                    ensureCoverMetadata(state.opfDoc, state.cover.item);
+                    return;
+                }
+
+                var manifest = firstLocal(state.opfDoc, 'manifest');
+                if (!manifest) throw new Error('OPF 中缺少 manifest，无法添加封面');
+                var ext = extFromMime(mime);
+                var relativeHref = 'images/cover-editor.' + ext;
+                var targetPath = uniqueZipPath(state.zip, resolvePath(state.opfDir, relativeHref));
+                if (targetPath.indexOf(state.opfDir) === 0) {
+                    relativeHref = targetPath.slice(state.opfDir.length);
+                } else {
+                    relativeHref = targetPath;
+                }
+
+                state.zip.file(targetPath, await file.arrayBuffer());
+                var item = state.opfDoc.createElementNS(opfNamespace(state.opfDoc), 'item');
+                item.setAttribute('id', uniqueManifestId(state.opfDoc, 'cover-image-editor'));
+                item.setAttribute('href', relativeHref);
+                item.setAttribute('media-type', mime);
+                item.setAttribute('properties', 'cover-image');
+                manifest.appendChild(item);
+                ensureCoverMetadata(state.opfDoc, item);
+                state.cover = { item: item, id: item.getAttribute('id'), href: relativeHref, path: targetPath, mediaType: mime };
+            }
+            function serializeOpf() {
+                var xml = new XMLSerializer().serializeToString(state.opfDoc);
+                var match = state.opfOriginalText.match(/^\s*(<\?xml[^>]*\?>)/i);
+                if (match && xml.trim().indexOf('<?xml') !== 0) xml = match[1] + '\n' + xml;
+                return xml;
+            }
+            async function exportEditedEpub() {
+                if (!state.zip || !state.opfDoc || !state.file) {
+                    setStatus('请先选择一个 EPUB 文件。', 'error');
+                    return;
+                }
+                var title = el('epubMetaTitle').value.trim();
+                if (!title) {
+                    setStatus('书名不能为空。', 'error');
+                    el('epubMetaTitle').focus();
+                    return;
+                }
+
+                var button = el('epubExportBtn');
+                if (button) {
+                    button.disabled = true;
+                    button.dataset.originalHtml = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成…';
+                }
+                setStatus('正在写入元数据并重新打包 EPUB…');
+
+                try {
+                    setMetaValue(state.opfDoc, 'title', title, true);
+                    setMetaValue(state.opfDoc, 'creator', el('epubMetaAuthor').value, false);
+                    setMetaValue(state.opfDoc, 'publisher', el('epubMetaPublisher').value, false);
+                    setMetaValue(state.opfDoc, 'language', el('epubMetaLanguage').value || 'zh-CN', true);
+                    setMetaValue(state.opfDoc, 'description', el('epubMetaDescription').value, false);
+                    updateModifiedMeta(state.opfDoc);
+                    await writePendingCover();
+
+                    state.zip.file(state.opfPath, serializeOpf());
+                    if (state.zip.file('mimetype')) {
+                        state.zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+                    }
+
+                    var blob = await state.zip.generateAsync({
+                        type: 'blob',
+                        mimeType: 'application/epub+zip',
+                        compression: 'DEFLATE',
+                        compressionOptions: { level: 6 }
+                    });
+
+                    var baseName = title || state.file.name.replace(/\.epub$/i, '');
+                    var outputName = safeFileName(baseName) + '_edited.epub';
+                    if (typeof saveAs === 'function') {
+                        saveAs(blob, outputName);
+                    } else {
+                        var link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = outputName;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        setTimeout(function () { revokeUrl(link.href); }, 1000);
+                    }
+                    setStatus('修改完成，已生成 ' + outputName + '。', 'success');
+                } catch (error) {
+                    console.error(error);
+                    setStatus(error && error.message ? error.message : 'EPUB 导出失败。', 'error');
+                } finally {
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = button.dataset.originalHtml || '<i class="fas fa-download"></i> 保存并导出 EPUB';
+                    }
+                }
+            }
+            function bindDropArea() {
+                var area = el('epubEditDropArea');
+                var input = el('epubEditInput');
+                var selectBtn = el('selectEpubEditBtn');
+                if (!area || !input || !selectBtn) return;
+
+                selectBtn.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    input.click();
+                });
+                area.addEventListener('click', function (event) {
+                    if (!selectBtn.contains(event.target)) input.click();
+                });
+                input.addEventListener('change', function () {
+                    if (input.files && input.files[0]) loadEpubFile(input.files[0]);
+                });
+
+                ['dragenter','dragover'].forEach(function (name) {
+                    area.addEventListener(name, function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        area.classList.add('is-dragging');
+                    });
+                });
+                ['dragleave','drop'].forEach(function (name) {
+                    area.addEventListener(name, function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        area.classList.remove('is-dragging');
+                    });
+                });
+                area.addEventListener('drop', function (event) {
+                    var files = event.dataTransfer && event.dataTransfer.files;
+                    if (files && files.length) {
+                        var epub = Array.prototype.find.call(files, function (candidate) { return /\.epub$/i.test(candidate.name); });
+                        if (epub) loadEpubFile(epub);
+                        else setStatus('拖入的文件中没有找到 .epub 文件。', 'error');
+                    }
+                });
+            }
+            function initEditor() {
+                initModeSwitch();
+                bindDropArea();
+
+                var resetBtn = el('epubResetBtn');
+                var chooseCoverBtn = el('epubChooseCoverBtn');
+                var coverInput = el('epubCoverInput');
+                var restoreBtn = el('epubRestoreCoverBtn');
+                var exportBtn = el('epubExportBtn');
+
+                if (resetBtn) resetBtn.addEventListener('click', resetEditor);
+                if (chooseCoverBtn && coverInput) chooseCoverBtn.addEventListener('click', function () { coverInput.click(); });
+                if (coverInput) coverInput.addEventListener('change', function () {
+                    if (coverInput.files && coverInput.files[0]) handleCoverFile(coverInput.files[0]);
+                });
+                if (restoreBtn) restoreBtn.addEventListener('click', restoreOriginalCover);
+                if (exportBtn) exportBtn.addEventListener('click', exportEditedEpub);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initEditor, { once: true });
+            } else {
+                initEditor();
             }
         })();
     </script>
