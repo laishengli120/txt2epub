@@ -2071,7 +2071,14 @@
             padding: 9px 44px 9px 12px;
             color: var(--memphis-dark);
             background-color: var(--memphis-white);
-            background-image: none !important;
+            background-image:
+                linear-gradient(45deg, transparent 50%, var(--memphis-dark) 50%),
+                linear-gradient(135deg, var(--memphis-dark) 50%, transparent 50%);
+            background-position:
+                calc(100% - 18px) calc(50% - 2px),
+                calc(100% - 13px) calc(50% - 2px);
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
             border: 2px solid var(--memphis-dark);
             border-radius: 8px;
             box-shadow: 3px 3px 0 var(--memphis-dark);
@@ -2098,6 +2105,15 @@
         html[data-ui-theme="memphis"] .custom-select-shell {
             position: relative;
             width: 100%;
+        }
+
+        html[data-ui-theme="memphis"] .custom-select-shell select.form-control {
+            background-image: none !important;
+        }
+
+        html[data-ui-theme="memphis"] select.form-control option {
+            color: var(--memphis-dark);
+            background: var(--memphis-white);
         }
 
         html[data-ui-theme="memphis"] .custom-select-arrow {
