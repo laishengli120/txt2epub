@@ -5836,20 +5836,25 @@
             }
             function ensureCoverMetadata(doc, item) {
                 var metadata = firstLocal(doc, 'metadata');
+                var version = parseFloat((doc.documentElement && doc.documentElement.getAttribute('version')) || '0');
                 var metas = localElements(metadata, 'meta');
                 var coverMeta = metas.find(function (meta) {
                     return (meta.getAttribute('name') || '').toLowerCase() === 'cover';
                 });
-                if (!coverMeta) {
-                    coverMeta = doc.createElementNS(opfNamespace(doc), 'meta');
-                    coverMeta.setAttribute('name', 'cover');
-                    metadata.appendChild(coverMeta);
-                }
-                coverMeta.setAttribute('content', item.getAttribute('id'));
 
-                var props = (item.getAttribute('properties') || '').split(/\s+/).filter(Boolean);
-                if (props.indexOf('cover-image') < 0) props.push('cover-image');
-                item.setAttribute('properties', props.join(' '));
+                if (version >= 3) {
+                    var props = (item.getAttribute('properties') || '').split(/\s+/).filter(Boolean);
+                    if (props.indexOf('cover-image') < 0) props.push('cover-image');
+                    item.setAttribute('properties', props.join(' '));
+                    if (coverMeta) coverMeta.setAttribute('content', item.getAttribute('id'));
+                } else {
+                    if (!coverMeta) {
+                        coverMeta = doc.createElementNS(opfNamespace(doc), 'meta');
+                        coverMeta.setAttribute('name', 'cover');
+                        metadata.appendChild(coverMeta);
+                    }
+                    coverMeta.setAttribute('content', item.getAttribute('id'));
+                }
             }
             async function writePendingCover() {
                 if (!state.pendingCoverFile) return;
@@ -5880,7 +5885,8 @@
                 item.setAttribute('id', uniqueManifestId(state.opfDoc, 'cover-image-editor'));
                 item.setAttribute('href', relativeHref);
                 item.setAttribute('media-type', mime);
-                item.setAttribute('properties', 'cover-image');
+                var packageVersion = parseFloat((state.opfDoc.documentElement && state.opfDoc.documentElement.getAttribute('version')) || '0');
+                if (packageVersion >= 3) item.setAttribute('properties', 'cover-image');
                 manifest.appendChild(item);
                 ensureCoverMetadata(state.opfDoc, item);
                 state.cover = { item: item, id: item.getAttribute('id'), href: relativeHref, path: targetPath, mediaType: mime };
