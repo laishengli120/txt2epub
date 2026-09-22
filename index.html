@@ -2212,6 +2212,196 @@
             display: none;
         }
 
+
+        /* --- True Memphis Custom Select 2026-09-22 --- */
+        .memphis-select-ui {
+            display: none;
+        }
+
+        html[data-ui-theme="memphis"] select.form-control[data-memphis-select="1"] {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            overflow: hidden !important;
+            clip: rect(0 0 0 0) !important;
+            clip-path: inset(50%) !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-ui {
+            display: block;
+            position: relative;
+            width: 100%;
+            z-index: 20;
+        }
+
+        html[data-ui-theme="memphis"] .custom-select-shell > .custom-select-arrow {
+            display: none !important;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-trigger {
+            width: 100%;
+            min-height: 43px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 11px 8px 13px;
+            color: var(--memphis-dark);
+            background: var(--memphis-white);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 8px;
+            box-shadow: 3px 3px 0 var(--memphis-dark);
+            font-family: var(--font-cn);
+            font-size: .86rem;
+            font-weight: 600;
+            line-height: 1.35;
+            text-align: left;
+            cursor: pointer;
+            transition: transform .16s ease, box-shadow .16s ease, background-color .16s ease, border-color .16s ease;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-trigger:hover {
+            background: #fffaf0;
+            transform: translate(-1px,-1px);
+            box-shadow: 4px 4px 0 var(--memphis-dark);
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-trigger:focus-visible {
+            outline: none;
+            border-color: var(--memphis-primary);
+            box-shadow: 3px 3px 0 var(--memphis-dark), 0 0 0 3px rgba(103,216,239,.30);
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-ui.is-open .memphis-select-trigger {
+            background: var(--memphis-secondary);
+            border-color: var(--memphis-dark);
+            transform: translate(-1px,-1px);
+            box-shadow: 4px 4px 0 var(--memphis-dark);
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-value {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-chevron {
+            width: 9px;
+            height: 9px;
+            flex: 0 0 9px;
+            margin-right: 2px;
+            border-right: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            transform: translateY(-2px) rotate(45deg);
+            transition: transform .18s ease;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-ui.is-open .memphis-select-chevron {
+            transform: translateY(2px) rotate(225deg);
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            z-index: 600;
+            max-height: 250px;
+            padding: 6px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            background: var(--memphis-white);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 9px;
+            box-shadow: 5px 5px 0 var(--memphis-dark), 0 14px 28px rgba(24,24,27,.12);
+            transform-origin: top center;
+            animation: memphisSelectMenuIn .14s ease-out both;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-menu[hidden] {
+            display: none !important;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-option {
+            width: 100%;
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 9px;
+            color: var(--memphis-dark);
+            background: transparent;
+            border: 0;
+            border-radius: 6px;
+            font-family: var(--font-cn);
+            font-size: .82rem;
+            font-weight: 500;
+            line-height: 1.35;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color .12s ease, transform .12s ease;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-option:hover,
+        html[data-ui-theme="memphis"] .memphis-select-option:focus-visible {
+            outline: none;
+            background: rgba(255,209,102,.42);
+            transform: translateX(2px);
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-option.is-selected {
+            background: rgba(93,214,179,.28);
+            font-weight: 700;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-option.is-selected::after {
+            content: '✓';
+            flex: 0 0 auto;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--memphis-dark);
+            background: var(--memphis-accent2);
+            border: 1.5px solid var(--memphis-dark);
+            border-radius: 50%;
+            font-size: .72rem;
+            font-weight: 800;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-option:disabled {
+            color: rgba(24,24,27,.38);
+            background: transparent;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        html[data-ui-theme="memphis"] .memphis-select-trigger:disabled {
+            color: rgba(24,24,27,.42);
+            background: #eeeae4;
+            cursor: not-allowed;
+            box-shadow: 2px 2px 0 rgba(24,24,27,.45);
+        }
+
+        @keyframes memphisSelectMenuIn {
+            from { opacity: 0; transform: translateY(-5px) scale(.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        html[data-ui-theme="classic"] .memphis-select-ui {
+            display: none !important;
+        }
+
     </style>
 </head>
 <body>
@@ -4569,6 +4759,232 @@
                 document.addEventListener('DOMContentLoaded', initThemeToggle, { once: true });
             } else {
                 initThemeToggle();
+            }
+        })();
+    </script>
+
+
+    <script id="memphisCustomSelectRuntime">
+        (function () {
+            var SELECTOR = 'select.form-control';
+
+            function isMemphis() {
+                return document.documentElement.getAttribute('data-ui-theme') !== 'classic';
+            }
+
+            function closeAll(except) {
+                document.querySelectorAll('.memphis-select-ui.is-open').forEach(function (ui) {
+                    if (ui === except) return;
+                    ui.classList.remove('is-open');
+                    var trigger = ui.querySelector('.memphis-select-trigger');
+                    var menu = ui.querySelector('.memphis-select-menu');
+                    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+                    if (menu) menu.hidden = true;
+                });
+            }
+
+            function enhanceSelect(select, index) {
+                if (!select || select.dataset.memphisSelect === '1') return;
+                select.dataset.memphisSelect = '1';
+
+                if (!select.id) {
+                    select.id = 'memphisSelect' + index;
+                }
+
+                var ui = document.createElement('div');
+                ui.className = 'memphis-select-ui';
+                ui.dataset.forSelect = select.id;
+
+                var trigger = document.createElement('button');
+                trigger.type = 'button';
+                trigger.className = 'memphis-select-trigger';
+                trigger.setAttribute('aria-haspopup', 'listbox');
+                trigger.setAttribute('aria-expanded', 'false');
+                trigger.setAttribute('aria-controls', select.id + '-memphis-listbox');
+
+                var value = document.createElement('span');
+                value.className = 'memphis-select-value';
+
+                var chevron = document.createElement('span');
+                chevron.className = 'memphis-select-chevron';
+                chevron.setAttribute('aria-hidden', 'true');
+
+                trigger.appendChild(value);
+                trigger.appendChild(chevron);
+
+                var menu = document.createElement('div');
+                menu.className = 'memphis-select-menu';
+                menu.id = select.id + '-memphis-listbox';
+                menu.setAttribute('role', 'listbox');
+                menu.hidden = true;
+
+                ui.appendChild(trigger);
+                ui.appendChild(menu);
+                select.insertAdjacentElement('afterend', ui);
+
+                function selectedOption() {
+                    return select.options[select.selectedIndex] || select.options[0] || null;
+                }
+
+                function syncTrigger() {
+                    var selected = selectedOption();
+                    value.textContent = selected ? selected.textContent.trim() : '请选择';
+                    trigger.disabled = !!select.disabled;
+                    trigger.title = value.textContent;
+                }
+
+                function rebuildMenu() {
+                    menu.innerHTML = '';
+
+                    Array.prototype.forEach.call(select.options, function (option, optionIndex) {
+                        var item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'memphis-select-option';
+                        item.setAttribute('role', 'option');
+                        item.dataset.optionIndex = String(optionIndex);
+                        item.textContent = option.textContent.trim();
+                        item.disabled = !!option.disabled;
+
+                        var isSelected = optionIndex === select.selectedIndex;
+                        item.classList.toggle('is-selected', isSelected);
+                        item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+
+                        item.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (option.disabled) return;
+
+                            select.selectedIndex = optionIndex;
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                            syncTrigger();
+                            rebuildMenu();
+                            closeAll();
+                            trigger.focus();
+                        });
+
+                        menu.appendChild(item);
+                    });
+                }
+
+                function openMenu(focusSelected) {
+                    if (!isMemphis() || select.disabled) return;
+                    closeAll(ui);
+                    rebuildMenu();
+                    ui.classList.add('is-open');
+                    menu.hidden = false;
+                    trigger.setAttribute('aria-expanded', 'true');
+
+                    if (focusSelected) {
+                        requestAnimationFrame(function () {
+                            var selectedItem = menu.querySelector('.memphis-select-option.is-selected:not(:disabled)');
+                            var firstItem = menu.querySelector('.memphis-select-option:not(:disabled)');
+                            (selectedItem || firstItem)?.focus();
+                        });
+                    }
+                }
+
+                function closeMenu() {
+                    ui.classList.remove('is-open');
+                    menu.hidden = true;
+                    trigger.setAttribute('aria-expanded', 'false');
+                }
+
+                trigger.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (ui.classList.contains('is-open')) {
+                        closeMenu();
+                    } else {
+                        openMenu(false);
+                    }
+                });
+
+                trigger.addEventListener('keydown', function (event) {
+                    if (!isMemphis()) return;
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openMenu(true);
+                    }
+                });
+
+                menu.addEventListener('keydown', function (event) {
+                    var enabled = Array.prototype.slice.call(
+                        menu.querySelectorAll('.memphis-select-option:not(:disabled)')
+                    );
+                    if (!enabled.length) return;
+
+                    var currentIndex = enabled.indexOf(document.activeElement);
+
+                    if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        enabled[(currentIndex + 1 + enabled.length) % enabled.length].focus();
+                    } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        enabled[(currentIndex - 1 + enabled.length) % enabled.length].focus();
+                    } else if (event.key === 'Home') {
+                        event.preventDefault();
+                        enabled[0].focus();
+                    } else if (event.key === 'End') {
+                        event.preventDefault();
+                        enabled[enabled.length - 1].focus();
+                    } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closeMenu();
+                        trigger.focus();
+                    }
+                });
+
+                select.addEventListener('change', function () {
+                    syncTrigger();
+                    if (ui.classList.contains('is-open')) rebuildMenu();
+                });
+
+                var labels = document.querySelectorAll('label[for="' + CSS.escape(select.id) + '"]');
+                labels.forEach(function (label) {
+                    label.addEventListener('click', function (event) {
+                        if (!isMemphis()) return;
+                        event.preventDefault();
+                        trigger.focus();
+                        openMenu(false);
+                    });
+                });
+
+                syncTrigger();
+            }
+
+            function init() {
+                document.querySelectorAll(SELECTOR).forEach(enhanceSelect);
+
+                document.addEventListener('click', function (event) {
+                    if (!event.target.closest('.memphis-select-ui')) {
+                        closeAll();
+                    }
+                });
+
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') closeAll();
+                });
+
+                new MutationObserver(function () {
+                    document.querySelectorAll(SELECTOR).forEach(enhanceSelect);
+                    document.querySelectorAll('select[data-memphis-select="1"]').forEach(function (select) {
+                        var ui = document.querySelector('.memphis-select-ui[data-for-select="' + CSS.escape(select.id) + '"]');
+                        if (!ui) return;
+                        var valueNode = ui.querySelector('.memphis-select-value');
+                        var selected = select.options[select.selectedIndex] || select.options[0];
+                        if (valueNode && selected && valueNode.textContent !== selected.textContent.trim()) {
+                            valueNode.textContent = selected.textContent.trim();
+                            ui.querySelector('.memphis-select-trigger').title = valueNode.textContent;
+                        }
+                    });
+                }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init, { once: true });
+            } else {
+                init();
             }
         })();
     </script>
