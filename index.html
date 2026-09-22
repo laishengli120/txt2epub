@@ -6066,7 +6066,13 @@
                 cover: null,
                 originalCoverUrl: '',
                 pendingCoverFile: null,
-                pendingCoverUrl: ''
+                pendingCoverUrl: '',
+                spineEntries: [],
+                previewIndex: 0,
+                chapterPreviewUrls: [],
+                tocCandidates: [],
+                tocRebuildEnabled: false,
+                styleApplied: false
             };
 
             function el(id) { return document.getElementById(id); }
@@ -6186,6 +6192,667 @@
             function findManifestItemById(doc, id) {
                 return manifestItems(doc).find(function (item) { return item.getAttribute('id') === id; }) || null;
             }
+
+            /* EPUB_ADVANCED_SUITE_RUNTIME_2026 */
+            function relativePathFromFile(fromFile, toFile) {
+                var fromParts = dirname(normalizePath(fromFile)).split('/').filter(Boolean);
+                var toParts = normalizePath(toFile).split('/').filter(Boolean);
+                var common = 0;
+                while (common < fromParts.length && common < toParts.length && fromParts[common] === toParts[common]) common++;
+                var up = new Array(fromParts.length - common).fill('..');
+                return up.concat(toParts.slice(common)).join('/') || './';
+            }
+            function xmlEscape(value) {
+                return String(value == null ? '' : value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&apos;');
+            }
+            function previewMime(path) {
+                var lower = String(path || '').toLowerCase();
+                if (/\.png$/.test(lower)) return 'image/png';
+                if (/\.jpe?g$/.test(lower)) return 'image/jpeg';
+                if (/\.gif$/.test(lower)) return 'image/gif';
+                if (/\.webp$/.test(lower)) return 'image/webp';
+                if (/\.svg$/.test(lower)) return 'image/svg+xml';
+                if (/\.css$/.test(lower)) return 'text/css';
+                if (/\.woff2$/.test(lower)) return 'font/woff2';
+                if (/\.woff$/.test(lower)) return 'font/woff';
+                if (/\.ttf$/.test(lower)) return 'font/ttf';
+                return 'application/octet-stream';
+            }
+            function clearChapterPreviewUrls() {
+                (state.chapterPreviewUrls || []).forEach(revokeUrl);
+                state.chapterPreviewUrls = [];
+            }
+            async function createZipObjectUrl(path) {
+                if (!state.zip) return '';
+                var entry = state.zip.file(path);
+                if (!entry) {
+                    try {
+                        var decoded = decodeURIComponent(path);
+                        entry = state.zip.file(decoded);
+                        if (entry) path = decoded;
+                    } catch (e) {}
+                }
+                if (!entry) return '';
+                var buffer = await entry.async('arraybuffer');
+                var url = URL.createObjectURL(new Blob([buffer], { type: previewMime(path) }));
+                state.chapterPreviewUrls.push(url);
+                return url;
+            }
+            function getSpineElement() {
+                return state.opfDoc ? firstLocal(state.opfDoc, 'spine') : null;
+            }
+            async function extractExistingTocMap() {
+                var map = Object.create(null);
+                if (!state.opfDoc || !state.zip) return map;
+                var items = manifestItems(state.opfDoc);
+
+                var navItem = items.find(function (item) {
+                    return (item.getAttribute('properties') || '').split(/\s+/).indexOf('nav') >= 0;
+                });
+                if (navItem) {
+                    var navPath = resolvePath(state.opfDir, navItem.getAttribute('href') || '');
+                    var navEntry = state.zip.file(navPath);
+                    if (navEntry) {
+                        try {
+                            var navText = await navEntry.async('text');
+                            var navDoc = new DOMParser().parseFromString(navText, 'text/html');
+                            Array.prototype.forEach.call(navDoc.querySelectorAll('a[href]'), function (a) {
+                                var href = a.getAttribute('href') || '';
+                                var path = resolvePath(dirname(navPath), href);
+                                var label = (a.textContent || '').replace(/\s+/g, ' ').trim();
+                                if (path && label && !map[path]) map[path] = label;
+                            });
+                        } catch (e) {}
+                    }
+                }
+
+                if (!Object.keys(map).length) {
+                    var ncxItem = items.find(function (item) {
+                        return (item.getAttribute('media-type') || '') === 'application/x-dtbncx+xml';
+                    });
+                    if (ncxItem) {
+                        var ncxPath = resolvePath(state.opfDir, ncxItem.getAttribute('href') || '');
+                        var ncxEntry = state.zip.file(ncxPath);
+                        if (ncxEntry) {
+                            try {
+                                var ncxDoc = parseXml(await ncxEntry.async('text'), 'NCX');
+                                localElements(ncxDoc, 'navPoint').forEach(function (point) {
+                                    var content = firstLocal(point, 'content');
+                                    var labelNode = firstLocal(point, 'navLabel');
+                                    var textNode = labelNode ? firstLocal(labelNode, 'text') : null;
+                                    var src = content ? (content.getAttribute('src') || '') : '';
+                                    var label = textNode ? (textNode.textContent || '').replace(/\s+/g, ' ').trim() : '';
+                                    var path = resolvePath(dirname(ncxPath), src);
+                                    if (path && label && !map[path]) map[path] = label;
+                                });
+                            } catch (e) {}
+                        }
+                    }
+                }
+                return map;
+            }
+            async function buildSpineEntries() {
+                if (!state.opfDoc) return [];
+                var tocMap = await extractExistingTocMap();
+                var spine = getSpineElement();
+                if (!spine) return [];
+                var entries = [];
+                localElements(spine, 'itemref').forEach(function (itemref, index) {
+                    var idref = itemref.getAttribute('idref') || '';
+                    var item = findManifestItemById(state.opfDoc, idref);
+                    if (!item) return;
+                    var media = (item.getAttribute('media-type') || '').toLowerCase();
+                    if (media && media.indexOf('html') < 0 && media.indexOf('xhtml') < 0) return;
+                    var href = item.getAttribute('href') || '';
+                    var path = resolvePath(state.opfDir, href);
+                    var fallback = decodeURIComponent((href.split('/').pop() || ('章节 ' + (index + 1))).replace(/\.(xhtml?|html?)$/i, ''));
+                    entries.push({
+                        index: entries.length,
+                        idref: idref,
+                        item: item,
+                        href: href,
+                        path: path,
+                        label: tocMap[path] || fallback || ('章节 ' + (entries.length + 1))
+                    });
+                });
+                return entries;
+            }
+            function populatePreviewChapterSelect() {
+                var select = el('epubPreviewChapterSelect');
+                if (!select) return;
+                select.innerHTML = '';
+                state.spineEntries.forEach(function (entry, index) {
+                    var option = document.createElement('option');
+                    option.value = String(index);
+                    option.textContent = (index + 1) + '. ' + entry.label;
+                    select.appendChild(option);
+                });
+                if (!state.spineEntries.length) {
+                    var empty = document.createElement('option');
+                    empty.value = '';
+                    empty.textContent = '未找到可预览正文';
+                    select.appendChild(empty);
+                }
+                state.previewIndex = 0;
+                select.value = state.spineEntries.length ? '0' : '';
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                updatePreviewNavState();
+            }
+            function updatePreviewNavState() {
+                var total = state.spineEntries.length;
+                var prev = el('epubPreviewPrevBtn');
+                var next = el('epubPreviewNextBtn');
+                var refresh = el('epubPreviewRefreshBtn');
+                if (prev) prev.disabled = !total || state.previewIndex <= 0;
+                if (next) next.disabled = !total || state.previewIndex >= total - 1;
+                if (refresh) refresh.disabled = !total;
+            }
+            function getStyleOptions() {
+                return {
+                    apply: !!(el('epubStyleApplyToggle') && el('epubStyleApplyToggle').checked),
+                    preset: el('epubStylePreset') ? el('epubStylePreset').value : 'novel',
+                    fontFamily: el('epubStyleFontFamily') ? el('epubStyleFontFamily').value : 'serif',
+                    fontScale: Math.max(80, Math.min(140, Number(el('epubStyleFontScale') && el('epubStyleFontScale').value) || 100)),
+                    lineHeight: Math.max(1.2, Math.min(2.6, Number(el('epubStyleLineHeight') && el('epubStyleLineHeight').value) || 1.8)),
+                    indent: Math.max(0, Math.min(4, Number(el('epubStyleIndent') && el('epubStyleIndent').value) || 0)),
+                    paragraphSpace: Math.max(0, Math.min(2, Number(el('epubStyleParagraphSpace') && el('epubStyleParagraphSpace').value) || 0)),
+                    pagePadding: Math.max(0, Math.min(15, Number(el('epubStylePagePadding') && el('epubStylePagePadding').value) || 0)),
+                    bodyAlign: el('epubStyleBodyAlign') ? el('epubStyleBodyAlign').value : 'inherit',
+                    headingAlign: el('epubStyleHeadingAlign') ? el('epubStyleHeadingAlign').value : 'inherit'
+                };
+            }
+            function applyStylePreset(name) {
+                var presets = {
+                    original: { apply:false, fontFamily:'original', fontScale:100, lineHeight:1.6, indent:0, paragraphSpace:0, pagePadding:0, bodyAlign:'inherit', headingAlign:'inherit' },
+                    novel: { apply:true, fontFamily:'serif', fontScale:100, lineHeight:1.8, indent:2, paragraphSpace:.35, pagePadding:4, bodyAlign:'justify', headingAlign:'center' },
+                    compact: { apply:true, fontFamily:'serif', fontScale:95, lineHeight:1.55, indent:2, paragraphSpace:.15, pagePadding:3, bodyAlign:'justify', headingAlign:'center' },
+                    airy: { apply:true, fontFamily:'serif', fontScale:105, lineHeight:2.05, indent:2, paragraphSpace:.55, pagePadding:6, bodyAlign:'justify', headingAlign:'center' }
+                };
+                var p = presets[name];
+                if (!p) return;
+                if (el('epubStyleApplyToggle')) el('epubStyleApplyToggle').checked = p.apply;
+                if (el('epubStyleFontFamily')) el('epubStyleFontFamily').value = p.fontFamily;
+                if (el('epubStyleFontScale')) el('epubStyleFontScale').value = p.fontScale;
+                if (el('epubStyleLineHeight')) el('epubStyleLineHeight').value = p.lineHeight;
+                if (el('epubStyleIndent')) el('epubStyleIndent').value = p.indent;
+                if (el('epubStyleParagraphSpace')) el('epubStyleParagraphSpace').value = p.paragraphSpace;
+                if (el('epubStylePagePadding')) el('epubStylePagePadding').value = p.pagePadding;
+                if (el('epubStyleBodyAlign')) el('epubStyleBodyAlign').value = p.bodyAlign;
+                if (el('epubStyleHeadingAlign')) el('epubStyleHeadingAlign').value = p.headingAlign;
+                ['epubStyleFontFamily','epubStyleBodyAlign','epubStyleHeadingAlign'].forEach(function (id) {
+                    var node = el(id);
+                    if (node) node.dispatchEvent(new Event('change', { bubbles:true }));
+                });
+            }
+            function buildPolishCss(forcePreview) {
+                var o = getStyleOptions();
+                if (!forcePreview && (!o.apply || o.preset === 'original')) return '';
+                var lines = [
+                    '/* Generated by TXT to EPUB Factory - EPUB style polish */',
+                    'html, body { max-width: 100% !important; }',
+                    'body { font-size: ' + o.fontScale + '% !important; padding-left: ' + o.pagePadding + '% !important; padding-right: ' + o.pagePadding + '% !important; box-sizing: border-box !important; }',
+                    'p { line-height: ' + o.lineHeight + ' !important; text-indent: ' + o.indent + 'em !important; margin-top: 0 !important; margin-bottom: ' + o.paragraphSpace + 'em !important; }',
+                    'blockquote p, li p, td p, th p { text-indent: 0 !important; }',
+                    'h1, h2, h3, h4, h5, h6 { text-indent: 0 !important; line-height: 1.4 !important; }'
+                ];
+                if (o.fontFamily === 'serif') lines.push('body { font-family: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif !important; }');
+                if (o.fontFamily === 'sans') lines.push('body { font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif !important; }');
+                if (o.fontFamily === 'system') lines.push('body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif !important; }');
+                if (o.bodyAlign !== 'inherit') lines.push('p { text-align: ' + o.bodyAlign + ' !important; }');
+                if (o.headingAlign !== 'inherit') lines.push('h1, h2, h3, h4, h5, h6 { text-align: ' + o.headingAlign + ' !important; }');
+                return lines.join('\n');
+            }
+            async function renderPreviewChapter(index) {
+                var entry = state.spineEntries[index];
+                var frame = el('epubPreviewFrame');
+                var placeholder = el('epubPreviewPlaceholder');
+                if (!entry || !frame || !state.zip) return;
+
+                state.previewIndex = index;
+                updatePreviewNavState();
+                var select = el('epubPreviewChapterSelect');
+                if (select && select.value !== String(index)) {
+                    select.value = String(index);
+                    select.dispatchEvent(new Event('change', { bubbles:true }));
+                }
+
+                var zipEntry = state.zip.file(entry.path);
+                if (!zipEntry) {
+                    setStatus('无法读取预览章节：' + entry.path, 'error');
+                    return;
+                }
+                clearChapterPreviewUrls();
+                try {
+                    var source = await zipEntry.async('text');
+                    var doc = new DOMParser().parseFromString(source, 'text/html');
+                    Array.prototype.forEach.call(doc.querySelectorAll('script, iframe, object, embed'), function (node) { node.remove(); });
+
+                    var cssLinks = Array.prototype.slice.call(doc.querySelectorAll('link[rel~="stylesheet"][href]'));
+                    for (var i = 0; i < cssLinks.length; i++) {
+                        var link = cssLinks[i];
+                        var cssPath = resolvePath(dirname(entry.path), link.getAttribute('href') || '');
+                        var cssEntry = state.zip.file(cssPath);
+                        if (cssEntry) {
+                            try {
+                                var style = doc.createElement('style');
+                                style.textContent = await cssEntry.async('text');
+                                doc.head.appendChild(style);
+                            } catch (e) {}
+                        }
+                        link.remove();
+                    }
+
+                    var images = Array.prototype.slice.call(doc.querySelectorAll('img[src]'));
+                    for (var j = 0; j < images.length; j++) {
+                        var img = images[j];
+                        var src = img.getAttribute('src') || '';
+                        if (!src || /^(data:|blob:|https?:)/i.test(src)) {
+                            if (/^https?:/i.test(src)) img.removeAttribute('src');
+                            continue;
+                        }
+                        var imagePath = resolvePath(dirname(entry.path), src);
+                        var imageUrl = await createZipObjectUrl(imagePath);
+                        if (imageUrl) img.setAttribute('src', imageUrl);
+                        else img.removeAttribute('src');
+                    }
+
+                    var meta = doc.createElement('meta');
+                    meta.setAttribute('http-equiv', 'Content-Security-Policy');
+                    meta.setAttribute('content', "default-src 'none'; img-src blob: data:; style-src 'unsafe-inline' blob: data:; font-src blob: data:");
+                    doc.head.insertBefore(meta, doc.head.firstChild);
+
+                    var previewStyle = doc.createElement('style');
+                    previewStyle.id = 'txt2epub-preview-polish-style';
+                    previewStyle.textContent =
+                        'body{margin:0 auto;max-width:760px;padding-top:44px!important;padding-bottom:70px!important;background:#fff;color:#222;} img{max-width:100%;height:auto;} a{color:inherit;text-decoration:none;pointer-events:none;} ' +
+                        buildPolishCss(true);
+                    doc.head.appendChild(previewStyle);
+
+                    frame.srcdoc = '<!doctype html>\n' + doc.documentElement.outerHTML;
+                    frame.style.display = 'block';
+                    if (placeholder) placeholder.style.display = 'none';
+                    var info = el('epubPreviewInfo');
+                    if (info) info.textContent = '第 ' + (index + 1) + ' / ' + state.spineEntries.length + ' 个正文文件 · ' + entry.label;
+                } catch (error) {
+                    console.error(error);
+                    setStatus('章节预览失败：' + (error.message || error), 'error');
+                }
+            }
+            function switchPolishTab(name) {
+                document.querySelectorAll('.epub-polish-tab').forEach(function (button) {
+                    var active = button.dataset.polishTab === name;
+                    button.classList.toggle('is-active', active);
+                    button.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
+                document.querySelectorAll('.epub-polish-panel').forEach(function (panel) {
+                    panel.classList.toggle('is-active', panel.dataset.polishPanel === name);
+                });
+            }
+            function tocRegexFor(mode) {
+                if (mode === 'custom') {
+                    var raw = (el('epubTocCustomRegex') && el('epubTocCustomRegex').value || '').trim();
+                    if (!raw) throw new Error('请输入自定义目录识别正则。');
+                    return new RegExp(raw, 'i');
+                }
+                if (mode === 'chinese') {
+                    return /^(?:第[零〇一二三四五六七八九十百千万两0-9]{1,16}[章回卷部集篇]|序章|楔子|前言|后记|尾声|番外(?:篇)?(?:\s*[零〇一二三四五六七八九十百千万两0-9]+)?)(?:[\s：:、.．\-—].{0,50})?$/i;
+                }
+                return /^(?:(?:第[零〇一二三四五六七八九十百千万两0-9]{1,16}[章回卷部集篇])|(?:Chapter\s+[0-9IVXLCDM]+)|序章|楔子|前言|后记|尾声|番外)(?:[\s：:、.．\-—].{0,50})?$/i;
+            }
+            function cleanCandidateText(value) {
+                return String(value || '').replace(/[\u00a0\t\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+            }
+            async function detectChapterTitle(entry, mode) {
+                var zipEntry = state.zip.file(entry.path);
+                if (!zipEntry) return '';
+                var source = await zipEntry.async('text');
+                var doc = new DOMParser().parseFromString(source, 'text/html');
+                var headings = Array.prototype.slice.call(doc.querySelectorAll('h1,h2,h3')).map(function (node) {
+                    return cleanCandidateText(node.textContent);
+                }).filter(Boolean);
+
+                if (mode === 'heading') return headings.find(function (t) { return t.length <= 100; }) || '';
+
+                var regex = tocRegexFor(mode);
+                if (mode === 'smart') {
+                    var headingMatch = headings.find(function (t) { return t.length <= 100 && regex.test(t); });
+                    if (headingMatch) return headingMatch;
+                    var goodHeading = headings.find(function (t) {
+                        return t.length <= 70 && !/^(目录|contents?|cover|封面)$/i.test(t);
+                    });
+                    if (goodHeading) return goodHeading;
+                }
+
+                var nodes = Array.prototype.slice.call(doc.querySelectorAll('h1,h2,h3,p,div')).slice(0, 100);
+                for (var i = 0; i < nodes.length; i++) {
+                    var text = cleanCandidateText(nodes[i].textContent);
+                    if (!text || text.length > 100) continue;
+                    regex.lastIndex = 0;
+                    if (regex.test(text)) return text;
+                }
+                if (mode === 'smart') {
+                    var title = cleanCandidateText(doc.title);
+                    if (title && title.length <= 80 && !/^(untitled|无标题)$/i.test(title)) return title;
+                }
+                return '';
+            }
+            function renderTocCandidates() {
+                var list = el('epubTocResultList');
+                if (!list) return;
+                list.innerHTML = '';
+                if (!state.tocCandidates.length) {
+                    list.innerHTML = '<div class="epub-toc-empty"><i class="fas fa-list"></i><span>尚未识别到目录项</span></div>';
+                } else {
+                    state.tocCandidates.forEach(function (candidate, index) {
+                        var row = document.createElement('div');
+                        row.className = 'epub-toc-row';
+
+                        var checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = candidate.enabled;
+                        checkbox.setAttribute('aria-label', '是否写入目录');
+                        checkbox.addEventListener('change', function () {
+                            candidate.enabled = checkbox.checked;
+                            updateTocSummary();
+                            state.tocRebuildEnabled = false;
+                            el('epubTocApplyBtn').disabled = false;
+                        });
+
+                        var number = document.createElement('span');
+                        number.className = 'epub-toc-index';
+                        number.textContent = String(index + 1);
+
+                        var input = document.createElement('input');
+                        input.type = 'text';
+                        input.className = 'epub-toc-title-input';
+                        input.value = candidate.title;
+                        input.placeholder = '章节名称';
+                        input.addEventListener('input', function () {
+                            candidate.title = input.value;
+                            updateTocSummary();
+                            state.tocRebuildEnabled = false;
+                            el('epubTocApplyBtn').disabled = false;
+                        });
+
+                        var file = document.createElement('span');
+                        file.className = 'epub-toc-file';
+                        file.textContent = candidate.entry.href;
+                        file.title = candidate.entry.href;
+
+                        row.appendChild(checkbox);
+                        row.appendChild(number);
+                        row.appendChild(input);
+                        row.appendChild(file);
+                        list.appendChild(row);
+                    });
+                }
+                updateTocSummary();
+            }
+            function updateTocSummary() {
+                var enabled = state.tocCandidates.filter(function (c) { return c.enabled && cleanCandidateText(c.title); }).length;
+                if (el('epubTocSpineCount')) el('epubTocSpineCount').textContent = state.spineEntries.length;
+                if (el('epubTocFoundCount')) el('epubTocFoundCount').textContent = state.tocCandidates.filter(function (c) { return cleanCandidateText(c.title); }).length;
+                if (el('epubTocEnabledCount')) el('epubTocEnabledCount').textContent = enabled;
+            }
+            async function scanToc() {
+                if (!state.spineEntries.length) {
+                    setStatus('当前 EPUB 未找到正文 spine。', 'error');
+                    return;
+                }
+                var mode = el('epubTocDetectMode') ? el('epubTocDetectMode').value : 'smart';
+                if (mode === 'custom') {
+                    try { tocRegexFor(mode); } catch (error) { setStatus(error.message, 'error'); return; }
+                }
+                var button = el('epubTocScanBtn');
+                var original = button ? button.innerHTML : '';
+                if (button) {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在扫描…';
+                }
+                state.tocCandidates = [];
+                state.tocRebuildEnabled = false;
+                if (el('epubTocApplyBtn')) el('epubTocApplyBtn').disabled = true;
+                if (el('epubTocStateText')) el('epubTocStateText').textContent = '正在读取正文并识别章节标题…';
+
+                try {
+                    for (var start = 0; start < state.spineEntries.length; start += 10) {
+                        var batch = state.spineEntries.slice(start, start + 10);
+                        var detected = await Promise.all(batch.map(async function (entry) {
+                            var title = await detectChapterTitle(entry, mode);
+                            var lower = (entry.href || '').toLowerCase();
+                            var likelyUtility = /(?:^|\/)(?:cover|nav|toc|title|copyright)(?:[_.\/-]|$)/.test(lower);
+                            return {
+                                entry: entry,
+                                title: title || entry.label || '',
+                                recognized: !!title,
+                                enabled: !!title && !likelyUtility
+                            };
+                        }));
+                        state.tocCandidates = state.tocCandidates.concat(detected);
+                        if (el('epubTocFoundCount')) {
+                            el('epubTocFoundCount').textContent = state.tocCandidates.filter(function (c) { return c.recognized; }).length;
+                        }
+                        await new Promise(function (resolve) { setTimeout(resolve, 0); });
+                    }
+                    renderTocCandidates();
+                    var found = state.tocCandidates.filter(function (c) { return c.recognized; }).length;
+                    if (el('epubTocStateText')) el('epubTocStateText').textContent = '扫描完成：识别到 ' + found + ' 个章节标题，可直接编辑名称或取消不需要的项。';
+                    if (el('epubTocApplyBtn')) el('epubTocApplyBtn').disabled = !found;
+                    setStatus('目录扫描完成，请检查识别结果。');
+                } catch (error) {
+                    console.error(error);
+                    setStatus('目录识别失败：' + (error.message || error), 'error');
+                } finally {
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = original || '<i class="fas fa-magnifying-glass"></i> 扫描正文';
+                    }
+                }
+            }
+            function useRecognizedToc() {
+                var enabled = state.tocCandidates.filter(function (c) { return c.enabled && cleanCandidateText(c.title); });
+                if (!enabled.length) {
+                    setStatus('至少保留一个有效目录项。', 'error');
+                    return;
+                }
+                state.tocRebuildEnabled = true;
+                if (el('epubTocApplyBtn')) el('epubTocApplyBtn').disabled = true;
+                if (el('epubTocStateText')) el('epubTocStateText').textContent = '已采用当前识别结果，导出时将重建目录。';
+                setStatus('目录重建方案已采用，将在导出 EPUB 时写入。');
+            }
+            function ensureManifestItem(doc, idBase, href, mediaType, properties) {
+                var items = manifestItems(doc);
+                var existing = items.find(function (item) {
+                    return normalizePath(item.getAttribute('href') || '') === normalizePath(href);
+                });
+                if (existing) {
+                    if (mediaType) existing.setAttribute('media-type', mediaType);
+                    if (properties) existing.setAttribute('properties', properties);
+                    return existing;
+                }
+                var manifest = firstLocal(doc, 'manifest');
+                if (!manifest) throw new Error('OPF 中缺少 manifest');
+                var item = doc.createElementNS(opfNamespace(doc), 'item');
+                item.setAttribute('id', uniqueManifestId(doc, idBase));
+                item.setAttribute('href', href);
+                item.setAttribute('media-type', mediaType);
+                if (properties) item.setAttribute('properties', properties);
+                manifest.appendChild(item);
+                return item;
+            }
+            async function applyStyleOverrideToZip() {
+                var css = buildPolishCss(false);
+                if (!css || !state.zip || !state.opfDoc) return;
+                var cssPath = normalizePath(state.opfDir + 'styles/txt2epub-polish.css');
+                state.zip.file(cssPath, css);
+                var cssHref = relativePathFromFile(state.opfPath, cssPath);
+                ensureManifestItem(state.opfDoc, 'txt2epub-polish-style', cssHref, 'text/css', '');
+
+                for (var i = 0; i < state.spineEntries.length; i++) {
+                    var entry = state.spineEntries[i];
+                    var zipEntry = state.zip.file(entry.path);
+                    if (!zipEntry) continue;
+                    var source = await zipEntry.async('text');
+                    var hrefFromChapter = relativePathFromFile(entry.path, cssPath);
+                    var linkTag = '<link id="txt2epub-polish-style" rel="stylesheet" type="text/css" href="' + xmlEscape(hrefFromChapter) + '" />';
+                    if (/id=["']txt2epub-polish-style["']/i.test(source)) {
+                        source = source.replace(/<link\b[^>]*id=["']txt2epub-polish-style["'][^>]*\/?\s*>/i, linkTag);
+                    } else if (/<\/head\s*>/i.test(source)) {
+                        source = source.replace(/<\/head\s*>/i, '  ' + linkTag + '\n</head>');
+                    }
+                    state.zip.file(entry.path, source);
+                }
+                state.styleApplied = true;
+            }
+            async function rebuildTocFiles() {
+                if (!state.tocRebuildEnabled || !state.opfDoc || !state.zip) return;
+                var candidates = state.tocCandidates.filter(function (c) {
+                    return c.enabled && cleanCandidateText(c.title);
+                });
+                if (!candidates.length) return;
+
+                var version = parseFloat((state.opfDoc.documentElement && state.opfDoc.documentElement.getAttribute('version')) || '0');
+                var items = manifestItems(state.opfDoc);
+                var lang = (el('epubMetaLanguage') && el('epubMetaLanguage').value) || 'zh-CN';
+                var bookTitle = (el('epubMetaTitle') && el('epubMetaTitle').value.trim()) || '目录';
+                var identifier = textOf(firstLocal(state.opfDoc, 'metadata'), 'identifier') || 'urn:uuid:txt2epub-editor';
+
+                var navItem = items.find(function (item) {
+                    return (item.getAttribute('properties') || '').split(/\s+/).indexOf('nav') >= 0;
+                });
+                if (version >= 3) {
+                    var navPath;
+                    if (navItem) {
+                        navPath = resolvePath(state.opfDir, navItem.getAttribute('href') || '');
+                    } else {
+                        navPath = normalizePath(state.opfDir + 'nav-editor.xhtml');
+                        navItem = ensureManifestItem(state.opfDoc, 'nav-editor', relativePathFromFile(state.opfPath, navPath), 'application/xhtml+xml', 'nav');
+                    }
+                    var navLis = candidates.map(function (candidate) {
+                        var href = relativePathFromFile(navPath, candidate.entry.path);
+                        return '        <li><a href="' + xmlEscape(href) + '">' + xmlEscape(cleanCandidateText(candidate.title)) + '</a></li>';
+                    }).join('\n');
+                    var navText = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                        '<!DOCTYPE html>\n' +
+                        '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="' + xmlEscape(lang) + '" xml:lang="' + xmlEscape(lang) + '">\n' +
+                        '<head><meta charset="utf-8"/><title>目录</title></head>\n' +
+                        '<body>\n<nav epub:type="toc" id="toc">\n<h1>目录</h1>\n<ol>\n' + navLis + '\n</ol>\n</nav>\n</body>\n</html>';
+                    state.zip.file(navPath, navText);
+                }
+
+                var spine = getSpineElement();
+                var ncxItem = items.find(function (item) {
+                    return (item.getAttribute('media-type') || '') === 'application/x-dtbncx+xml';
+                });
+                if (!ncxItem && spine && spine.getAttribute('toc')) {
+                    ncxItem = findManifestItemById(state.opfDoc, spine.getAttribute('toc'));
+                }
+                if (version < 3 || ncxItem) {
+                    var ncxPath;
+                    if (ncxItem) {
+                        ncxPath = resolvePath(state.opfDir, ncxItem.getAttribute('href') || '');
+                    } else {
+                        ncxPath = normalizePath(state.opfDir + 'toc-editor.ncx');
+                        ncxItem = ensureManifestItem(state.opfDoc, 'toc-editor', relativePathFromFile(state.opfPath, ncxPath), 'application/x-dtbncx+xml', '');
+                    }
+                    if (spine) spine.setAttribute('toc', ncxItem.getAttribute('id'));
+                    var points = candidates.map(function (candidate, index) {
+                        var src = relativePathFromFile(ncxPath, candidate.entry.path);
+                        return '    <navPoint id="navPoint-' + (index + 1) + '" playOrder="' + (index + 1) + '">\n' +
+                            '      <navLabel><text>' + xmlEscape(cleanCandidateText(candidate.title)) + '</text></navLabel>\n' +
+                            '      <content src="' + xmlEscape(src) + '"/>\n' +
+                            '    </navPoint>';
+                    }).join('\n');
+                    var ncxText = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                        '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">\n' +
+                        '  <head><meta name="dtb:uid" content="' + xmlEscape(identifier) + '"/></head>\n' +
+                        '  <docTitle><text>' + xmlEscape(bookTitle) + '</text></docTitle>\n' +
+                        '  <navMap>\n' + points + '\n  </navMap>\n</ncx>';
+                    state.zip.file(ncxPath, ncxText);
+                }
+            }
+            function resetAdvancedEditorUi() {
+                clearChapterPreviewUrls();
+                state.spineEntries = [];
+                state.previewIndex = 0;
+                state.tocCandidates = [];
+                state.tocRebuildEnabled = false;
+                state.styleApplied = false;
+                var frame = el('epubPreviewFrame');
+                if (frame) { frame.srcdoc = ''; frame.style.display = 'none'; }
+                if (el('epubPreviewPlaceholder')) el('epubPreviewPlaceholder').style.display = 'flex';
+                if (el('epubPreviewInfo')) el('epubPreviewInfo').textContent = '预览不会执行书内脚本。';
+                if (el('epubTocResultList')) el('epubTocResultList').innerHTML = '<div class="epub-toc-empty"><i class="fas fa-list"></i><span>尚未扫描目录</span></div>';
+                if (el('epubTocStateText')) el('epubTocStateText').textContent = '点击“扫描正文”重新识别章节标题。';
+                if (el('epubTocApplyBtn')) el('epubTocApplyBtn').disabled = true;
+                updateTocSummary();
+                populatePreviewChapterSelect();
+            }
+            function bindAdvancedEditorTools() {
+                document.querySelectorAll('.epub-polish-tab').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        switchPolishTab(button.dataset.polishTab);
+                    });
+                });
+
+                var chapterSelect = el('epubPreviewChapterSelect');
+                if (chapterSelect) chapterSelect.addEventListener('change', function () {
+                    var index = Number(chapterSelect.value);
+                    if (Number.isInteger(index) && state.spineEntries[index]) renderPreviewChapter(index);
+                });
+                if (el('epubPreviewPrevBtn')) el('epubPreviewPrevBtn').addEventListener('click', function () {
+                    if (state.previewIndex > 0) renderPreviewChapter(state.previewIndex - 1);
+                });
+                if (el('epubPreviewNextBtn')) el('epubPreviewNextBtn').addEventListener('click', function () {
+                    if (state.previewIndex < state.spineEntries.length - 1) renderPreviewChapter(state.previewIndex + 1);
+                });
+                if (el('epubPreviewRefreshBtn')) el('epubPreviewRefreshBtn').addEventListener('click', function () {
+                    renderPreviewChapter(state.previewIndex);
+                });
+
+                var previewTimer = null;
+                function schedulePreview() {
+                    clearTimeout(previewTimer);
+                    previewTimer = setTimeout(function () {
+                        if (state.spineEntries.length) renderPreviewChapter(state.previewIndex);
+                    }, 140);
+                }
+                var preset = el('epubStylePreset');
+                if (preset) preset.addEventListener('change', function () {
+                    if (preset.value !== 'custom') applyStylePreset(preset.value);
+                    schedulePreview();
+                });
+                ['epubStyleFontFamily','epubStyleFontScale','epubStyleLineHeight','epubStyleIndent','epubStyleParagraphSpace','epubStylePagePadding','epubStyleBodyAlign','epubStyleHeadingAlign','epubStyleApplyToggle'].forEach(function (id) {
+                    var node = el(id);
+                    if (!node) return;
+                    var eventName = (node.tagName === 'INPUT' && node.type !== 'checkbox') ? 'input' : 'change';
+                    node.addEventListener(eventName, function () {
+                        if (preset && id !== 'epubStyleApplyToggle') preset.value = 'custom';
+                        schedulePreview();
+                    });
+                });
+                if (el('epubStyleResetBtn')) el('epubStyleResetBtn').addEventListener('click', function () {
+                    if (preset) preset.value = 'novel';
+                    applyStylePreset('novel');
+                    schedulePreview();
+                });
+                if (el('epubStylePreviewBtn')) el('epubStylePreviewBtn').addEventListener('click', function () {
+                    switchPolishTab('preview');
+                    if (state.spineEntries.length) renderPreviewChapter(state.previewIndex);
+                });
+
+                var detectMode = el('epubTocDetectMode');
+                if (detectMode) detectMode.addEventListener('change', function () {
+                    if (el('epubTocRegexWrap')) el('epubTocRegexWrap').style.display = detectMode.value === 'custom' ? 'block' : 'none';
+                });
+                if (el('epubTocScanBtn')) el('epubTocScanBtn').addEventListener('click', scanToc);
+                if (el('epubTocApplyBtn')) el('epubTocApplyBtn').addEventListener('click', useRecognizedToc);
+            }
             function findCoverInfo(doc, opfDir, zip) {
                 var items = manifestItems(doc);
                 var coverItem = items.find(function (item) {
@@ -6296,6 +6963,17 @@
                     el('epubEditChapterCount').textContent = spine ? localElements(spine, 'itemref').length : 0;
                     el('epubEditResourceCount').textContent = manifestItems(state.opfDoc).length;
 
+                    state.spineEntries = await buildSpineEntries();
+                    state.previewIndex = 0;
+                    state.tocCandidates = [];
+                    state.tocRebuildEnabled = false;
+                    state.styleApplied = false;
+                    populatePreviewChapterSelect();
+                    updateTocSummary();
+                    if (el('epubTocResultList')) el('epubTocResultList').innerHTML = '<div class="epub-toc-empty"><i class="fas fa-list"></i><span>尚未扫描目录</span></div>';
+                    if (el('epubTocStateText')) el('epubTocStateText').textContent = '点击“扫描正文”重新识别章节标题。';
+                    if (el('epubTocApplyBtn')) el('epubTocApplyBtn').disabled = true;
+
                     state.cover = findCoverInfo(state.opfDoc, state.opfDir, state.zip);
                     if (state.cover && state.zip.file(state.cover.path)) {
                         var coverBlob = await state.zip.file(state.cover.path).async('blob');
@@ -6314,7 +6992,10 @@
                     el('epubEditWorkspace').style.display = 'block';
                     el('epubResetBtn').style.display = 'inline-flex';
                     if (exportBtn) exportBtn.disabled = false;
-                    setStatus('EPUB 已读取。修改信息后点击“保存并导出 EPUB”。');
+                    setStatus('EPUB 已读取，可预览正文、精校样式或重新识别目录。');
+                    if (state.spineEntries.length) {
+                        renderPreviewChapter(0);
+                    }
                 } catch (error) {
                     console.error(error);
                     setStatus(error && error.message ? error.message : 'EPUB 读取失败。', 'error');
@@ -6323,6 +7004,7 @@
             }
             function resetEditor() {
                 clearPreviewUrls();
+                resetAdvancedEditorUi();
                 state.file = null;
                 state.zip = null;
                 state.opfPath = '';
@@ -6527,6 +7209,8 @@
                     setMetaValue(state.opfDoc, 'description', el('epubMetaDescription').value, false);
                     updateModifiedMeta(state.opfDoc);
                     await writePendingCover();
+                    await applyStyleOverrideToZip();
+                    await rebuildTocFiles();
 
                     state.zip.file(state.opfPath, serializeOpf());
                     if (state.zip.file('mimetype')) {
@@ -6607,6 +7291,8 @@
             function initEditor() {
                 initModeSwitch();
                 bindDropArea();
+                bindAdvancedEditorTools();
+                applyStylePreset('novel');
 
                 var resetBtn = el('epubResetBtn');
                 var chooseCoverBtn = el('epubChooseCoverBtn');
