@@ -1,9 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN" data-ui-theme="memphis">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TXT to EPUB Converter - Memphis Style</title>
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem('txt2epub-ui-theme');
+                if (savedTheme === 'classic' || savedTheme === 'memphis') {
+                    document.documentElement.setAttribute('data-ui-theme', savedTheme);
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <title>TXT to EPUB Converter</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1320,6 +1330,660 @@
             }
         }
 
+
+        /* --- Classic UI Theme 2026 --- */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .theme-toggle-btn {
+            min-height: 38px;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border: 2px solid var(--memphis-dark);
+            border-radius: 999px;
+            background: var(--memphis-white);
+            color: var(--memphis-dark);
+            font-family: var(--font-cn);
+            font-size: .82rem;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 var(--memphis-dark);
+            transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
+            white-space: nowrap;
+        }
+
+        .theme-toggle-btn:hover {
+            transform: translate(-1px,-1px);
+            box-shadow: 5px 5px 0 var(--memphis-dark);
+            background: var(--memphis-accent2);
+        }
+
+        .theme-toggle-btn:active {
+            transform: translate(2px,2px);
+            box-shadow: 1px 1px 0 var(--memphis-dark);
+        }
+
+        .theme-toggle-btn i {
+            font-size: .9rem;
+        }
+
+        html[data-ui-theme="classic"] {
+            --memphis-bg: #f5f7fa;
+            --memphis-primary: #2563eb;
+            --memphis-secondary: #eff4ff;
+            --memphis-accent1: #dbeafe;
+            --memphis-accent2: #e8f1ff;
+            --memphis-dark: #1f2937;
+            --memphis-white: #ffffff;
+            --memphis-muted: #6b7280;
+            --memphis-purple: #2563eb;
+            --border-radius: 10px;
+            --bold-border: 1px solid #dce2ea;
+            --graphic-shadow: 0 4px 14px rgba(15, 23, 42, .06);
+            --graphic-shadow-sm: 0 2px 8px rgba(15, 23, 42, .06);
+            --graphic-shadow-hover: 0 8px 22px rgba(15, 23, 42, .09);
+            --surface-shadow: 0 8px 28px rgba(15, 23, 42, .06);
+            --transition: all .18s ease;
+        }
+
+        html[data-ui-theme="classic"] body {
+            background: #f5f7fa;
+            color: #1f2937;
+            letter-spacing: 0;
+        }
+
+        html[data-ui-theme="classic"] body::before,
+        html[data-ui-theme="classic"] body::after,
+        html[data-ui-theme="classic"] .header::before,
+        html[data-ui-theme="classic"] .header::after {
+            display: none;
+        }
+
+        html[data-ui-theme="classic"] .header {
+            background: rgba(255,255,255,.96);
+            border-bottom: 1px solid #e5e9ef;
+            box-shadow: 0 1px 10px rgba(15,23,42,.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        html[data-ui-theme="classic"] .header h1 {
+            font-family: var(--font-cn);
+            color: #172033;
+            font-size: 1.18rem;
+            font-weight: 700;
+            letter-spacing: .01em;
+            text-transform: none;
+            text-shadow: none;
+            animation: none;
+        }
+
+        html[data-ui-theme="classic"] .theme-toggle-btn {
+            min-height: 36px;
+            padding: 7px 12px;
+            border: 1px solid #d8dee8;
+            border-radius: 9px;
+            background: #f8fafc;
+            color: #334155;
+            box-shadow: none;
+            font-weight: 600;
+        }
+
+        html[data-ui-theme="classic"] .theme-toggle-btn:hover {
+            transform: none;
+            background: #eef4ff;
+            border-color: #b9cdfb;
+            color: #1d4ed8;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .theme-toggle-btn:active {
+            transform: none;
+            background: #e3ecff;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .sidebar {
+            border-right: 0;
+        }
+
+        html[data-ui-theme="classic"] .sidebar-icons {
+            background: #ffffff;
+            border-right: 1px solid #e5e9ef;
+            box-shadow: 1px 0 8px rgba(15,23,42,.025);
+        }
+
+        html[data-ui-theme="classic"] .sidebar-icon {
+            width: 38px;
+            height: 38px;
+            color: #64748b;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            box-shadow: none;
+            transform: none;
+        }
+
+        html[data-ui-theme="classic"] .sidebar-icon::after {
+            display: none;
+        }
+
+        html[data-ui-theme="classic"] .sidebar-icon:hover {
+            color: #1d4ed8;
+            background: #eff5ff;
+            border-color: #dbe8ff;
+            transform: none;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .sidebar-icon.active {
+            color: #1d4ed8;
+            background: #eaf2ff;
+            border-color: #cfe0ff;
+            transform: none;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .sidebar-content {
+            background: #ffffff;
+            border-right: 1px solid #e5e9ef;
+            box-shadow: 2px 0 10px rgba(15,23,42,.025);
+        }
+
+        html[data-ui-theme="classic"] .settings-section.active {
+            animation: none;
+        }
+
+        html[data-ui-theme="classic"] .settings-header {
+            margin-bottom: 22px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e7ebf0;
+        }
+
+        html[data-ui-theme="classic"] .settings-header::after {
+            display: none;
+        }
+
+        html[data-ui-theme="classic"] .settings-header h3 {
+            font-family: var(--font-cn);
+            color: #172033;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+
+        html[data-ui-theme="classic"] .settings-header h3 i {
+            width: auto;
+            height: auto;
+            margin-right: 8px;
+            color: #2563eb;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .main-content {
+            max-width: 1360px;
+            padding-top: 28px;
+        }
+
+        html[data-ui-theme="classic"] .content-card {
+            background: #ffffff;
+            border: 1px solid #e3e8ef;
+            border-radius: 14px;
+            box-shadow: 0 5px 20px rgba(15,23,42,.045);
+            animation: none;
+        }
+
+        html[data-ui-theme="classic"] .content-card::before,
+        html[data-ui-theme="classic"] .content-card::after {
+            display: none;
+        }
+
+        html[data-ui-theme="classic"] h2,
+        html[data-ui-theme="classic"] h3,
+        html[data-ui-theme="classic"] h4 {
+            font-family: var(--font-cn);
+        }
+
+        html[data-ui-theme="classic"] .form-group label {
+            color: #475569;
+            font-size: .82rem;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        html[data-ui-theme="classic"] .form-control {
+            min-height: 42px;
+            padding: 9px 12px;
+            color: #1f2937;
+            background: #ffffff;
+            border: 1px solid #cfd7e3;
+            border-radius: 9px;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .form-control:hover {
+            background: #ffffff;
+            border-color: #aeb9c8;
+        }
+
+        html[data-ui-theme="classic"] .form-control:focus {
+            border-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+            transform: none;
+        }
+
+        html[data-ui-theme="classic"] .radio-option {
+            padding: 3px 4px 3px 0;
+            border-radius: 6px;
+        }
+
+        html[data-ui-theme="classic"] .radio-option:hover {
+            background: transparent;
+            transform: none;
+        }
+
+        html[data-ui-theme="classic"] .radio-option input[type="radio"] {
+            width: 17px;
+            height: 17px;
+            border: 1px solid #aeb8c6;
+            background: #ffffff;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .radio-option input[type="radio"]:checked {
+            border-color: #2563eb;
+            background: #2563eb;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .radio-option input[type="radio"]:checked::after {
+            top: 4px;
+            left: 4px;
+            width: 7px;
+            height: 7px;
+        }
+
+        html[data-ui-theme="classic"] .btn {
+            padding: 10px 18px;
+            color: #ffffff;
+            background: #2563eb;
+            border: 1px solid #2563eb;
+            border-radius: 9px;
+            box-shadow: 0 2px 5px rgba(37,99,235,.16);
+            font-family: var(--font-cn);
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+            transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+        }
+
+        html[data-ui-theme="classic"] .btn::after {
+            display: none;
+        }
+
+        html[data-ui-theme="classic"] .btn:hover {
+            color: #ffffff;
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+            box-shadow: 0 4px 10px rgba(37,99,235,.20);
+            transform: translateY(-1px);
+        }
+
+        html[data-ui-theme="classic"] .btn:active {
+            background: #1e40af;
+            border-color: #1e40af;
+            box-shadow: none;
+            transform: translateY(0);
+        }
+
+        html[data-ui-theme="classic"] .btn-secondary {
+            color: #334155;
+            background: #f8fafc;
+            border-color: #cfd7e3;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .btn-secondary:hover {
+            color: #1e3a8a;
+            background: #eff5ff;
+            border-color: #b9cdfb;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .btn-success {
+            color: #ffffff;
+            background: #0f9f6e;
+            border-color: #0f9f6e;
+        }
+
+        html[data-ui-theme="classic"] .btn-success:hover {
+            color: #ffffff;
+            background: #0b8159;
+            border-color: #0b8159;
+        }
+
+        html[data-ui-theme="classic"] .btn-outline {
+            color: #334155;
+            background: #ffffff;
+            border-color: #cfd7e3;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .btn-outline:hover {
+            color: #1d4ed8;
+            background: #eff5ff;
+            border-color: #b9cdfb;
+            transform: none;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .drop-area {
+            padding: 58px 28px;
+            color: #334155;
+            background: #f8fbff;
+            border: 1.5px dashed #9db7df;
+            border-radius: 14px;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .drop-area::before,
+        html[data-ui-theme="classic"] .drop-area::after {
+            display: none;
+        }
+
+        html[data-ui-theme="classic"] .drop-area:hover {
+            color: #1f2937;
+            background: #f1f7ff;
+            border-color: #4f86d9;
+            transform: none;
+            box-shadow: inset 0 0 0 1px rgba(79,134,217,.10);
+        }
+
+        html[data-ui-theme="classic"] .drop-area.active {
+            background: #eef6ff;
+            border-color: #2563eb;
+        }
+
+        html[data-ui-theme="classic"] .drop-area h3 {
+            color: #172033;
+            font-size: 1.28rem;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+
+        html[data-ui-theme="classic"] .drop-area p {
+            color: #64748b;
+        }
+
+        html[data-ui-theme="classic"] .file-format-badge {
+            min-height: 25px;
+            padding: 2px 9px;
+            color: #1d4ed8;
+            background: #eaf2ff;
+            border: 1px solid #cbdfff;
+            border-radius: 999px;
+            box-shadow: none;
+            font-weight: 600;
+        }
+
+        html[data-ui-theme="classic"] .filbt {
+            background: #ffffff;
+            border: 1px solid #dfe5ec;
+            border-radius: 12px;
+            box-shadow: 0 3px 14px rgba(15,23,42,.045);
+        }
+
+        html[data-ui-theme="classic"] .filbt:hover {
+            transform: none;
+            box-shadow: 0 5px 18px rgba(15,23,42,.06);
+        }
+
+        html[data-ui-theme="classic"] .file-preview .file-icon-and-details i.fa-file-alt {
+            color: #3b82f6;
+        }
+
+        html[data-ui-theme="classic"] .file-preview-actions .icon-button {
+            border: 1px solid #d3dae4;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .file-preview-actions .icon-button:hover,
+        html[data-ui-theme="classic"] .file-preview-actions .icon-button:active {
+            transform: none;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] #previewTxtBtn.icon-button {
+            color: #2563eb;
+            background: #eef5ff;
+        }
+
+        html[data-ui-theme="classic"] #previewTxtBtn.icon-button:hover {
+            background: #e2edff;
+        }
+
+        html[data-ui-theme="classic"] #removeTxtBtn.icon-button {
+            color: #b42318;
+            background: #fff1f0;
+        }
+
+        html[data-ui-theme="classic"] #removeTxtBtn.icon-button:hover {
+            background: #ffe5e3;
+        }
+
+        html[data-ui-theme="classic"] .convert-btn {
+            color: #ffffff;
+            background: #2563eb;
+            border: 0;
+            border-left: 1px solid #dfe5ec;
+            font-family: var(--font-cn);
+            font-weight: 700;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        html[data-ui-theme="classic"] .convert-btn::before {
+            display: none;
+        }
+
+        html[data-ui-theme="classic"] .convert-btn:hover {
+            color: #ffffff;
+            background: #1d4ed8;
+            transform: none;
+        }
+
+        html[data-ui-theme="classic"] .convert-btn:active {
+            background: #1e40af;
+            transform: none;
+        }
+
+        html[data-ui-theme="classic"] .config-summary {
+            background: #f8fafc;
+            border: 1px solid #e1e7ee;
+            border-left: 3px solid #3b82f6;
+            border-radius: 10px;
+        }
+
+        html[data-ui-theme="classic"] .config-summary h4 {
+            color: #1e3a8a;
+            font-family: var(--font-cn);
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        html[data-ui-theme="classic"] .summary-cover {
+            background: #f1f5f9;
+            border: 1px solid #dbe2ea;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(15,23,42,.07);
+        }
+
+        html[data-ui-theme="classic"] .summary-cover:hover {
+            transform: none;
+            box-shadow: 0 5px 14px rgba(15,23,42,.09);
+        }
+
+        html[data-ui-theme="classic"] .cover-preview {
+            border: 1px solid #dbe2ea;
+            border-radius: 8px;
+            box-shadow: 0 3px 12px rgba(15,23,42,.07);
+        }
+
+        html[data-ui-theme="classic"] .cover-nav-btn {
+            color: #334155;
+            background: #ffffff;
+            border: 1px solid #ccd5e1;
+            border-radius: 8px;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .cover-nav-btn:hover {
+            color: #1d4ed8;
+            background: #eef5ff;
+            border-color: #b9cdfb;
+            transform: none;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .progress-bar-container {
+            height: 12px;
+            padding: 1px;
+            background: #e9eef5;
+            border: 0;
+            border-radius: 999px;
+        }
+
+        html[data-ui-theme="classic"] .progress-bar {
+            background: linear-gradient(90deg, #2563eb, #60a5fa);
+            border-radius: 999px;
+        }
+
+        html[data-ui-theme="classic"] .progress-bar::after {
+            display: none;
+        }
+
+        html[data-ui-theme="classic"] .loading-spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid #dbe5f3;
+            border-top-color: #2563eb;
+            animation: spin .8s linear infinite;
+        }
+
+        html[data-ui-theme="classic"] .progress-area h3,
+        html[data-ui-theme="classic"] .result-area h3 {
+            color: #172033;
+        }
+
+        html[data-ui-theme="classic"] .result-icon {
+            color: #16a36d;
+            filter: none;
+            animation: none;
+        }
+
+        html[data-ui-theme="classic"] .result-card {
+            background: #f8fafc;
+            border: 1px solid #e0e6ed;
+            border-radius: 10px;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .debug-area {
+            background: #111827;
+            border: 1px solid #263244;
+            border-radius: 10px;
+        }
+
+        html[data-ui-theme="classic"] .debug-area h3 {
+            color: #dbeafe;
+            text-transform: none;
+        }
+
+        html[data-ui-theme="classic"] .debug-log {
+            border: 1px solid #334155;
+            border-radius: 8px;
+        }
+
+        html[data-ui-theme="classic"] .modal-overlay {
+            background: rgba(15,23,42,.45);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+        }
+
+        html[data-ui-theme="classic"] .modal-content.memphis-modal {
+            background: #ffffff;
+            border: 1px solid #dfe5ec;
+            border-radius: 14px;
+            box-shadow: 0 22px 65px rgba(15,23,42,.20);
+        }
+
+        html[data-ui-theme="classic"] .modal-header {
+            border-bottom: 1px solid #e7ebf0;
+        }
+
+        html[data-ui-theme="classic"] .modal-header::before {
+            display: none;
+        }
+
+        html[data-ui-theme="classic"] .modal-title-text {
+            color: #172033 !important;
+            font-family: var(--font-cn);
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        html[data-ui-theme="classic"] .modal-close-btn {
+            color: #64748b;
+            background: transparent;
+            border: 0;
+            border-radius: 7px;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] .modal-close-btn:hover {
+            color: #1f2937;
+            background: #f1f5f9;
+            transform: none;
+            box-shadow: none;
+        }
+
+        html[data-ui-theme="classic"] #txtPreviewModal #txtPreviewContent {
+            background: #f8fafc;
+            border: 1px solid #dbe2ea;
+            border-radius: 9px;
+        }
+
+        html[data-ui-theme="classic"] .btn:focus-visible,
+        html[data-ui-theme="classic"] .theme-toggle-btn:focus-visible,
+        html[data-ui-theme="classic"] .sidebar-icon:focus-visible,
+        html[data-ui-theme="classic"] .icon-button:focus-visible,
+        html[data-ui-theme="classic"] .cover-nav-btn:focus-visible {
+            outline: 3px solid rgba(37,99,235,.22);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .theme-toggle-text { display: none; }
+            .theme-toggle-btn { width: 38px; padding: 0; }
+            html[data-ui-theme="classic"] .theme-toggle-btn { width: 36px; padding: 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -1327,6 +1991,10 @@
         <div class="header">
             <h1>TXT to EPUB Factory</h1>
             <div class="header-actions">
+                <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="切换到普通风格" title="切换到普通风格">
+                    <i class="fas fa-layer-group" aria-hidden="true"></i>
+                    <span class="theme-toggle-text">普通风格</span>
+                </button>
                 <button id="toggleSidebarBtn" class="btn btn-sm">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -3106,7 +3774,69 @@
                     oebps.file('stylesheet.css', styleContent);
 
                     // 4. OEBPS/title.xhtml
-                    oebps.file('title.xhtml', `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(options.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body class="title-page"><div id="title_page_main" class="book-title">${escapeXML(options.title)}</div><div class="author">${escapeXML(options.author)}</div></body></html>`);
+                    oebps.file('title.xhtml', `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${options.language}"><head><meta charset="UTF-8" /><title>${escapeXML(options.title)}</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /></head><body class="title-page"><div id="title_page_main" class="book-title">${escapeXML(options.title)}</div><div class="author">${escapeXML(options.author)}</div>
+    <script>
+        (function () {
+            var THEME_KEY = 'txt2epub-ui-theme';
+            var root = document.documentElement;
+
+            function getTheme() {
+                return root.getAttribute('data-ui-theme') === 'classic' ? 'classic' : 'memphis';
+            }
+
+            function updateThemeButton(theme) {
+                var button = document.getElementById('themeToggleBtn');
+                if (!button) return;
+
+                var icon = button.querySelector('i');
+                var text = button.querySelector('.theme-toggle-text');
+                var isClassic = theme === 'classic';
+
+                if (icon) {
+                    icon.className = isClassic ? 'fas fa-shapes' : 'fas fa-layer-group';
+                }
+                if (text) {
+                    text.textContent = isClassic ? 'Memphis 风格' : '普通风格';
+                }
+
+                var targetName = isClassic ? 'Memphis 风格' : '普通风格';
+                button.setAttribute('aria-label', '切换到' + targetName);
+                button.setAttribute('title', '切换到' + targetName);
+            }
+
+            function applyTheme(theme, persist) {
+                var normalized = theme === 'classic' ? 'classic' : 'memphis';
+                root.setAttribute('data-ui-theme', normalized);
+                updateThemeButton(normalized);
+
+                if (persist) {
+                    try {
+                        localStorage.setItem(THEME_KEY, normalized);
+                    } catch (e) {}
+                }
+            }
+
+            function initThemeToggle() {
+                var button = document.getElementById('themeToggleBtn');
+                if (!button) return;
+
+                applyTheme(getTheme(), false);
+
+                button.addEventListener('click', function () {
+                    var nextTheme = getTheme() === 'classic' ? 'memphis' : 'classic';
+                    applyTheme(nextTheme, true);
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initThemeToggle);
+            } else {
+                initThemeToggle();
+            }
+        })();
+    </script>
+
+</body></html>`);
 
                     // 5. Cover Image and OEBPS/cover.xhtml (if cover exists)
                     let coverImagePath = null;
