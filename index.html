@@ -2809,6 +2809,338 @@
             }
         }
 
+
+        /* --- EPUB Preview Polish TOC Suite 2026-09-22 --- */
+        .epub-polish-suite {
+            margin-top: 24px;
+            padding: 20px;
+            background: rgba(255,255,255,.68);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--memphis-dark);
+        }
+
+        .epub-polish-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 16px;
+        }
+
+        .epub-polish-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 6px;
+            color: var(--memphis-primary);
+            font-size: .7rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+        }
+
+        .epub-polish-heading h3 { margin: 0 0 4px; font-size: 1.08rem; }
+        .epub-polish-heading p { margin: 0; color: var(--memphis-muted); font-size: .76rem; line-height: 1.55; }
+
+        .epub-polish-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            padding-bottom: 13px;
+            border-bottom: 2px dashed rgba(24,24,27,.36);
+        }
+
+        .epub-polish-tab {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-height: 38px;
+            padding: 7px 13px;
+            color: var(--memphis-dark);
+            background: var(--memphis-white);
+            border: 2px solid var(--memphis-dark);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--memphis-dark);
+            font-family: var(--font-cn);
+            font-size: .8rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .epub-polish-tab.is-active {
+            background: var(--memphis-accent2);
+            transform: translate(-1px,-1px);
+            box-shadow: 3px 3px 0 var(--memphis-dark);
+        }
+
+        .epub-polish-panel { display: none; }
+        .epub-polish-panel.is-active { display: block; }
+
+        .epub-preview-toolbar {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .epub-preview-select-wrap { flex: 1; min-width: 220px; }
+        .epub-preview-select-wrap label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--memphis-muted);
+            font-size: .72rem;
+            font-weight: 700;
+        }
+
+        .epub-preview-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .epub-preview-shell {
+            min-height: 520px;
+            position: relative;
+            overflow: hidden;
+            background: #f4efe6;
+            border: 2px solid var(--memphis-dark);
+            border-radius: 10px;
+            box-shadow: inset 0 0 0 6px rgba(255,255,255,.46);
+        }
+
+        .epub-preview-placeholder {
+            min-height: 520px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 30px;
+            color: var(--memphis-muted);
+            text-align: center;
+        }
+        .epub-preview-placeholder i { font-size: 2.1rem; color: var(--memphis-primary); }
+        .epub-preview-placeholder strong { color: var(--memphis-dark); }
+
+        #epubPreviewFrame {
+            width: 100%;
+            min-height: 520px;
+            border: 0;
+            background: white;
+        }
+
+        .epub-preview-foot {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 8px;
+            color: var(--memphis-muted);
+            font-size: .7rem;
+        }
+
+        .epub-style-layout { display: grid; gap: 16px; }
+        .epub-style-topline {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 5px;
+        }
+        .epub-style-topline > .form-group { flex: 1; max-width: 320px; }
+        .epub-style-enable {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px !important;
+            cursor: pointer;
+            font-size: .78rem !important;
+            text-transform: none !important;
+            letter-spacing: 0 !important;
+        }
+        .epub-style-enable input { width: 18px; height: 18px; accent-color: var(--memphis-primary); }
+        .epub-style-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0,1fr));
+            gap: 0 14px;
+        }
+        .epub-style-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 9px;
+            margin-top: 4px;
+        }
+        .epub-style-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 11px 13px;
+            background: rgba(103,216,239,.14);
+            border: 1.5px dashed var(--memphis-dark);
+            border-radius: 8px;
+        }
+        .epub-style-note p { margin: 0; color: var(--memphis-muted); font-size: .74rem; line-height: 1.55; }
+        .epub-style-note strong { color: var(--memphis-dark); }
+
+        .epub-toc-toolbar {
+            display: grid;
+            grid-template-columns: minmax(180px, .8fr) minmax(260px, 1.2fr) auto;
+            gap: 14px;
+            align-items: end;
+        }
+        .epub-toc-actions {
+            display: flex;
+            gap: 8px;
+            padding-bottom: 20px;
+            justify-content: flex-end;
+        }
+        .epub-toc-summary {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 13px;
+        }
+        .epub-toc-summary > span {
+            min-width: 96px;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 10px;
+            background: rgba(255,209,102,.22);
+            border: 1.5px solid var(--memphis-dark);
+            border-radius: 7px;
+        }
+        .epub-toc-summary b { font-size: .68rem; color: var(--memphis-muted); }
+        .epub-toc-summary em { font-size: .9rem; font-style: normal; font-weight: 800; }
+        .epub-toc-summary p {
+            flex: 1 1 100%;
+            margin: 2px 0 0;
+            color: var(--memphis-muted);
+            font-size: .72rem;
+        }
+
+        .epub-toc-result-list {
+            max-height: 420px;
+            overflow: auto;
+            padding: 6px;
+            background: rgba(255,255,255,.48);
+            border: 1.5px solid rgba(24,24,27,.28);
+            border-radius: 9px;
+        }
+        .epub-toc-empty {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            color: var(--memphis-muted);
+            font-size: .75rem;
+        }
+        .epub-toc-row {
+            display: grid;
+            grid-template-columns: 28px 36px minmax(0,1fr) minmax(120px,.5fr);
+            gap: 8px;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px dashed rgba(24,24,27,.18);
+        }
+        .epub-toc-row:last-child { border-bottom: 0; }
+        .epub-toc-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--memphis-primary); }
+        .epub-toc-index { color: var(--memphis-muted); font-size: .7rem; text-align: right; }
+        .epub-toc-title-input {
+            width: 100%;
+            min-height: 34px;
+            padding: 5px 6px;
+            color: var(--memphis-dark);
+            background: transparent;
+            border: 0;
+            border-bottom: 1.5px solid rgba(24,24,27,.36);
+            outline: none;
+            font: inherit;
+            font-size: .78rem;
+        }
+        .epub-toc-title-input:focus { border-color: var(--memphis-primary); }
+        .epub-toc-file {
+            min-width: 0;
+            overflow: hidden;
+            color: var(--memphis-muted);
+            font-size: .67rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .epub-toc-warning {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 10px;
+            color: var(--memphis-muted);
+            font-size: .7rem;
+            line-height: 1.5;
+        }
+
+        html[data-ui-theme="classic"] .epub-polish-suite {
+            background: #fff;
+            border: 1px solid #e1e7ee;
+            box-shadow: 0 4px 16px rgba(15,23,42,.045);
+        }
+        html[data-ui-theme="classic"] .epub-polish-tabs { border-bottom: 1px solid #e7ebf0; }
+        html[data-ui-theme="classic"] .epub-polish-tab {
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px solid #d8dee8;
+            box-shadow: none;
+        }
+        html[data-ui-theme="classic"] .epub-polish-tab.is-active {
+            color: #1d4ed8;
+            background: #eef4ff;
+            border-color: #c9dbff;
+            transform: none;
+            box-shadow: none;
+        }
+        html[data-ui-theme="classic"] .epub-preview-shell {
+            background: #eef2f7;
+            border: 1px solid #dbe2ea;
+            box-shadow: none;
+        }
+        html[data-ui-theme="classic"] .epub-style-note,
+        html[data-ui-theme="classic"] .epub-toc-summary > span {
+            background: #f8fafc;
+            border: 1px solid #dfe5ec;
+        }
+        html[data-ui-theme="classic"] .epub-toc-result-list {
+            background: #f8fafc;
+            border: 1px solid #dfe5ec;
+        }
+        html[data-ui-theme="classic"] .epub-toc-title-input {
+            border-bottom: 1px solid #cfd7e3;
+        }
+        html[data-ui-theme="classic"] .epub-toc-title-input:focus { border-color: #3b82f6; }
+
+        @media (max-width: 980px) {
+            .epub-style-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .epub-toc-toolbar { grid-template-columns: 1fr 1fr; }
+            .epub-toc-actions { grid-column: 1 / -1; padding-bottom: 0; justify-content: flex-start; }
+        }
+        @media (max-width: 720px) {
+            .epub-polish-suite { padding: 14px; }
+            .epub-polish-tabs { overflow-x: auto; }
+            .epub-polish-tab { flex: 0 0 auto; }
+            .epub-preview-toolbar,
+            .epub-style-topline { flex-direction: column; align-items: stretch; }
+            .epub-preview-nav { justify-content: flex-start; }
+            .epub-style-grid,
+            .epub-toc-toolbar { grid-template-columns: 1fr; }
+            .epub-toc-actions { grid-column: auto; flex-wrap: wrap; }
+            .epub-toc-row { grid-template-columns: 24px 30px minmax(0,1fr); }
+            .epub-toc-file { grid-column: 3; }
+        }
+
     </style>
 </head>
 <body>
@@ -3013,7 +3345,7 @@
                     <div>
                         <div class="epub-editor-kicker"><i class="fas fa-book-open"></i> EPUB EDITOR</div>
                         <h2>编辑已有 EPUB</h2>
-                        <p>修改书籍元数据与封面，不重排正文，不改变原有章节结构。</p>
+                        <p>修改书籍元数据与封面，并可预览正文、精校阅读样式、重新识别目录。</p>
                     </div>
                     <button type="button" class="btn btn-outline btn-sm epub-reset-btn" id="epubResetBtn" style="display:none;">
                         <i class="fas fa-rotate-left"></i> 重新选择
@@ -3123,6 +3455,190 @@
                             <p class="epub-cover-note" id="epubCoverNote">建议使用 JPG 或 PNG，竖版封面兼容性最好。</p>
                         </section>
                     </div>
+
+                    <section class="epub-polish-suite" id="epubPolishSuite">
+                        <div class="epub-polish-heading">
+                            <div>
+                                <span class="epub-polish-eyebrow"><i class="fas fa-wand-magic-sparkles"></i> EPUB 精校工具</span>
+                                <h3>预览 · 风格精校 · 目录重识别</h3>
+                                <p>先预览正文，再调整阅读样式；目录识别结果确认后会在导出时同时写入 EPUB2/EPUB3 目录结构。</p>
+                            </div>
+                        </div>
+
+                        <div class="epub-polish-tabs" role="tablist" aria-label="EPUB 精校工具">
+                            <button type="button" class="epub-polish-tab is-active" data-polish-tab="preview" role="tab" aria-selected="true">
+                                <i class="fas fa-eye"></i><span>预览</span>
+                            </button>
+                            <button type="button" class="epub-polish-tab" data-polish-tab="style" role="tab" aria-selected="false">
+                                <i class="fas fa-sliders"></i><span>风格精校</span>
+                            </button>
+                            <button type="button" class="epub-polish-tab" data-polish-tab="toc" role="tab" aria-selected="false">
+                                <i class="fas fa-list-ol"></i><span>重新识别目录</span>
+                            </button>
+                        </div>
+
+                        <div class="epub-polish-panel is-active" data-polish-panel="preview" role="tabpanel">
+                            <div class="epub-preview-toolbar">
+                                <div class="epub-preview-select-wrap">
+                                    <label for="epubPreviewChapterSelect">预览章节</label>
+                                    <select id="epubPreviewChapterSelect" class="form-control">
+                                        <option value="">加载 EPUB 后显示章节</option>
+                                    </select>
+                                </div>
+                                <div class="epub-preview-nav">
+                                    <button type="button" class="btn btn-outline btn-sm" id="epubPreviewPrevBtn" disabled>
+                                        <i class="fas fa-chevron-left"></i> 上一章
+                                    </button>
+                                    <button type="button" class="btn btn-outline btn-sm" id="epubPreviewNextBtn" disabled>
+                                        下一章 <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="epubPreviewRefreshBtn" disabled>
+                                        <i class="fas fa-rotate"></i> 刷新预览
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="epub-preview-shell">
+                                <div class="epub-preview-placeholder" id="epubPreviewPlaceholder">
+                                    <i class="fas fa-book-open-reader"></i>
+                                    <strong>等待加载 EPUB</strong>
+                                    <span>读取书籍后可按章节预览正文与风格精校效果。</span>
+                                </div>
+                                <iframe id="epubPreviewFrame" title="EPUB 正文预览" sandbox="allow-same-origin" style="display:none;"></iframe>
+                            </div>
+                            <div class="epub-preview-foot">
+                                <span id="epubPreviewInfo">预览不会执行书内脚本。</span>
+                            </div>
+                        </div>
+
+                        <div class="epub-polish-panel" data-polish-panel="style" role="tabpanel">
+                            <div class="epub-style-layout">
+                                <div class="epub-style-controls">
+                                    <div class="epub-style-topline">
+                                        <div class="form-group">
+                                            <label for="epubStylePreset">阅读预设</label>
+                                            <select id="epubStylePreset" class="form-control">
+                                                <option value="original">保持原样</option>
+                                                <option value="novel" selected>中文小说舒适</option>
+                                                <option value="compact">紧凑阅读</option>
+                                                <option value="airy">宽松阅读</option>
+                                                <option value="custom">自定义</option>
+                                            </select>
+                                        </div>
+                                        <label class="epub-style-enable">
+                                            <input type="checkbox" id="epubStyleApplyToggle" checked>
+                                            <span>导出时写入精校样式</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="epub-style-grid">
+                                        <div class="form-group">
+                                            <label for="epubStyleFontFamily">正文字体</label>
+                                            <select id="epubStyleFontFamily" class="form-control">
+                                                <option value="original">沿用原书</option>
+                                                <option value="serif" selected>衬线 / 宋体阅读</option>
+                                                <option value="sans">无衬线</option>
+                                                <option value="system">系统字体</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="epubStyleFontScale">字号比例（%）</label>
+                                            <input type="number" id="epubStyleFontScale" class="form-control" min="80" max="140" step="5" value="100">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="epubStyleLineHeight">行高</label>
+                                            <input type="number" id="epubStyleLineHeight" class="form-control" min="1.2" max="2.6" step="0.1" value="1.8">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="epubStyleIndent">首行缩进（em）</label>
+                                            <input type="number" id="epubStyleIndent" class="form-control" min="0" max="4" step="0.5" value="2">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="epubStyleParagraphSpace">段间距（em）</label>
+                                            <input type="number" id="epubStyleParagraphSpace" class="form-control" min="0" max="2" step="0.1" value="0.35">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="epubStylePagePadding">页面左右留白（%）</label>
+                                            <input type="number" id="epubStylePagePadding" class="form-control" min="0" max="15" step="1" value="4">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="epubStyleBodyAlign">正文对齐</label>
+                                            <select id="epubStyleBodyAlign" class="form-control">
+                                                <option value="inherit">沿用原书</option>
+                                                <option value="justify" selected>两端对齐</option>
+                                                <option value="left">左对齐</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="epubStyleHeadingAlign">章节标题</label>
+                                            <select id="epubStyleHeadingAlign" class="form-control">
+                                                <option value="inherit">沿用原书</option>
+                                                <option value="center" selected>居中</option>
+                                                <option value="left">左对齐</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="epub-style-actions">
+                                        <button type="button" class="btn btn-outline btn-sm" id="epubStyleResetBtn">
+                                            <i class="fas fa-rotate-left"></i> 恢复精校默认值
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-sm" id="epubStylePreviewBtn">
+                                            <i class="fas fa-eye"></i> 查看当前效果
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="epub-style-note">
+                                    <i class="fas fa-circle-info"></i>
+                                    <p><strong>非破坏式精校：</strong>导出时新增一份覆盖样式表，并链接到正文页面；原书 CSS 保留，关闭“导出时写入精校样式”即可完全不修改正文样式。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="epub-polish-panel" data-polish-panel="toc" role="tabpanel">
+                            <div class="epub-toc-toolbar">
+                                <div class="form-group">
+                                    <label for="epubTocDetectMode">识别方式</label>
+                                    <select id="epubTocDetectMode" class="form-control">
+                                        <option value="smart" selected>智能识别（推荐）</option>
+                                        <option value="heading">优先 H1/H2/H3 标题</option>
+                                        <option value="chinese">中文“第 X 章 / 卷 / 回”</option>
+                                        <option value="custom">自定义正则</option>
+                                    </select>
+                                </div>
+                                <div class="form-group epub-toc-regex-wrap" id="epubTocRegexWrap" style="display:none;">
+                                    <label for="epubTocCustomRegex">自定义正则</label>
+                                    <input type="text" id="epubTocCustomRegex" class="form-control" placeholder="例如：^第.{1,12}[章回卷部]">
+                                </div>
+                                <div class="epub-toc-actions">
+                                    <button type="button" class="btn btn-secondary btn-sm" id="epubTocScanBtn">
+                                        <i class="fas fa-magnifying-glass"></i> 扫描正文
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-sm" id="epubTocApplyBtn" disabled>
+                                        <i class="fas fa-list-check"></i> 使用识别结果
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="epub-toc-summary" id="epubTocSummary">
+                                <span><b>正文文件</b><em id="epubTocSpineCount">0</em></span>
+                                <span><b>已识别</b><em id="epubTocFoundCount">0</em></span>
+                                <span><b>将写入目录</b><em id="epubTocEnabledCount">0</em></span>
+                                <p id="epubTocStateText">点击“扫描正文”重新识别章节标题。</p>
+                            </div>
+
+                            <div class="epub-toc-result-list" id="epubTocResultList">
+                                <div class="epub-toc-empty">
+                                    <i class="fas fa-list"></i>
+                                    <span>尚未扫描目录</span>
+                                </div>
+                            </div>
+
+                            <div class="epub-toc-warning">
+                                <i class="fas fa-shield-halved"></i>
+                                <span>目录重建只修改目录导航文件，不改变正文文件顺序。识别结果可逐项取消或修改章节名称后再应用。</span>
+                            </div>
+                        </div>
+                    </section>
 
                     <div class="epub-edit-status" id="epubEditStatus" aria-live="polite">
                         <i class="fas fa-circle-info"></i>
